@@ -79,7 +79,7 @@
 		// Fields
 		var _this = this;
 		var _isNamespace = IsNamespace;
-		var _parentNamespace = parentNamespace;
+		var _parentNamespace = parentNamespace || null;
 
 		// Methods
 		function getNameSafe()
