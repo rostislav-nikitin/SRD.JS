@@ -29,10 +29,10 @@
 #   - public string getFullName()                                                                                      #
 #       Get the full namespace instance name (dotted branch namespaces nodes names)                                    #
 #                                                                                                                      #
-#   - public string getIsNamespace()                                                                                   #
+#   - public boolean getIsNamespace()                                                                                  #
 #       Get the true if instance is a namespace otherwise false                                                        #
 #                                                                                                                      #
-#   - public string getParentNamespace()                                                                               #
+#   - public object getParentNamespace()                                                                               #
 #       Get the parent namespace of the namespace instance or null if the instance is a root namespace                 #
 #                                                                                                                      #
 +======================================================================================================================+
