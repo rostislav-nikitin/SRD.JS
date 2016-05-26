@@ -38,8 +38,14 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	// Private static members
 	// Constants
 	//  Types
-	var StringTypeName = "string", ObjectTypeName = "object", 
-		UndefinedTypeName = "undefined", FunctionTypeName = "function";
+	var TypeNames = 
+	{
+		String: 'string', 
+		Object: 'object', 
+		Undefined: 'undefined', 
+    		Function:  'function'
+	};
+
 	//  Numbers
 	var Zero = 0;
 	//   Other
@@ -52,7 +58,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	// Fields
 	var _globalContext = globalContext || this, 
 		_isExportToGlobalContext = 
-			(typeof(isExportToGlobalContext) !== UndefinedTypeName &&  isExportToGlobalContext === true) 
+			(typeof(isExportToGlobalContext) !== TypeNames.Undefined &&  isExportToGlobalContext === true) 
 			|| DefaultIsExportToGlobalContext;
 
 
@@ -102,8 +108,8 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 		{
 			var parts = [], currentNamespace = _this;
 
-			while(typeof(currentNamespace.getParentNamespace) === FunctionTypeName && 
-				typeof(currentNamespace.getParentNamespace()) === ObjectTypeName && 
+			while(typeof(currentNamespace.getParentNamespace) === TypeNames.Function && 
+				typeof(currentNamespace.getParentNamespace()) === TypeNames.Object && 
 				currentNamespace.getParentNamespace() !== null)
 			{
 				parts.splice(Number.Zero, Number.Zero, currentNamespace.getName());
@@ -119,7 +125,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	{
 		var type = typeof(parent[namespaceParts[index]]), result = null;
 
-		if(type === UndefinedTypeName || (type === ObjectTypeName && types === null))
+		if(type === TypeNames.Undefined || (type === TypeNames.Object && types === null))
 		{
 			result = parent[namespaceParts[index]] = new Namespace(parent);
 		}
@@ -157,7 +163,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	{
 		var result = this;
 
-		if(typeof(namespaceName) === StringTypeName)
+		if(typeof(namespaceName) === TypeNames.String)
 		{
 			result = nsSafe(namespaceName);
 		}
@@ -168,7 +174,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	constructor.isNs = function(obj)
 	{
 		var result;
-		if(typeof(obj) === ObjectTypeName && obj !== null && typeof(obj.getIsNamespace) === FunctionTypeName)
+		if(typeof(obj) === TypeNames.Object && obj !== null && typeof(obj.getIsNamespace) === TypeNames.Function)
 		{
 			result = obj.getIsNamespace() === true;
 		}
@@ -181,14 +187,17 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	}
 
 	// Private static members
-	var NsExists = true;
-	var NsNotExists = false;
+	var IsNsExists = 
+	{
+		NotExists: false,
+		Exists: true
+	};
 
 	function isNsPart(nsPart)
 	{
-		return typeof(nsPart) === ObjectTypeName 
+		return typeof(nsPart) === TypeNames.Object
 				&& nsPart !== null
-				&& (nsPart === _globalContext || (typeof(nsPart.getIsNamespace) === FunctionTypeName 
+				&& (nsPart === _globalContext || (typeof(nsPart.getIsNamespace) === TypeNames.Function
 					&&  nsPart.getIsNamespace() === true));
 	}
 
@@ -211,13 +220,13 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	{
 		var result;
 
-		if(typeof(nsName) === StringTypeName && nsName !== null)
+		if(typeof(nsName) === TypeNames.String && nsName !== null)
 		{
 			result = isNsExistsSafe(nsName);
 		}
 		else
 		{
-			result = NsNotExists;
+			result = IsNsExists.NotExists;
 		}
 
 		return result;

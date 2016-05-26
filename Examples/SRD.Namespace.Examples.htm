@@ -1,27 +1,28 @@
 <html>
 	<head>
+		<title>SRD.Namespace.Examples</title>
 		<style type='text/css'>
 			#console {color: Green; font-size: 150%;}
 		</style>
-		<script type='text/javascript' src="../Js/SRD.Namespace.js"></script>
+		<script type='text/javascript' src='../Js/SRD.Namespace.js'></script>
 		<script>
 			window.addEventListener('load', function()
 			{
 				function WriteLine(message)
 				{
-					var LineBreak = "<br />", consoleId = "console", console = document.getElementById(consoleId);
+					var LineBreak = '<br />', consoleId = 'console', console = document.getElementById(consoleId);
 
 					console.innerHTML += message + LineBreak;
 				}
 				
 				// Create System.Collections namespce
-				var sysCollections = ns("System.Collections");
+				var sysCollections = ns('System.Collections');
 				// Create new class inside a created namespace by namespace JSON
 				System.Collections.List = (function()
 				{
 					function constructor()
 					{
-						WriteLine("List constuctor was called.");
+						WriteLine('List constuctor was called.');
 					}
 
 					return constructor;
@@ -33,7 +34,7 @@
 					function constructor()
 					{
 
-						WriteLine("Hashtable constructor was called.");
+						WriteLine('Hashtable constructor was called.');
 					}
 
 					return constructor;
@@ -47,21 +48,21 @@
 				var hashtable = new System.Collections.Hashtable();
 
 				// Test isNs Global function
-				WriteLine("isNs(System.Collections)=" + isNs(System.Collections));
+				WriteLine('isNs(System.Collections)=' + isNs(System.Collections));
 				// Test isNsExists Global function
-				WriteLine("isNsExists(\"System.Collection\")=" + isNsExists("System.Collections"));
-				WriteLine("isNsExists(\"System.Drawing\")=" + isNsExists("System.Drawing"));
+				WriteLine('isNsExists("System.Collection")=' + isNsExists('System.Collections'));
+				WriteLine('isNsExists("System.Drawing")=' + isNsExists('System.Drawing'));
 
 				// Test getName() mehtod
-				WriteLine("System.Collection::getName()=\"" + System.Collections.getName() + "\"");
+				WriteLine('System.Collection::getName()="' + System.Collections.getName() + '"');
 				// Test getFullName() method
-				WriteLine("System.Collection::getFullName()=\"" + System.Collections.getFullName() + "\"");
+				WriteLine('System.Collection::getFullName()="' + System.Collections.getFullName() + '"');
 			});
 					
 		</script>
 	</head>
 	<body>
-		<div id="console">
+		<div id='console'>
 		</div>
 	</body>
 </html>
