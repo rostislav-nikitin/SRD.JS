@@ -9,7 +9,7 @@
 #       Create namespaces from the root to the leaf                                                                    #
 #       nsFullName - dotted branch(from the root to the current namespace) nodes name                                  #
 #       Return leaf namespace                                                                                          #
-#       Example: ns("NSNAme.NSName...NSNAme")                                                                          #
+#       Example: ns("NSName.NSName...NSName")                                                                          #
 #                                                                                                                      #
 #   - public static boolean isNsExists(string nsFullName)                                                              #
 #       Check is namespace exists                                                                                      #
