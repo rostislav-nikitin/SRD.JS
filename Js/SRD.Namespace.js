@@ -11,29 +11,35 @@
 #       Return leaf namespace                                                                                          #
 #       Example: ns("NSNAme.NSName...NSNAme")                                                                          #
 #                                                                                                                      #
-#   - public static boolean isNsExists(nsFullName)                                                                     #
+#   - public static boolean isNsExists(string nsFullName)                                                              #
 #       Check is namespace exists                                                                                      #
 #       nsFullName - dotted branch(from the root to the current namespace) nodes name                                  #
 #       Return true if exists otherwise false                                                                          #
 #	Example: isNsExists("System.Collections")                                                                      #
 #                                                                                                                      #
-#   - public static boolean isNs(nsFullName)                                                                           #
+#   - public static boolean isNs(object obj)                                                                           #
 #       Check does specified object is a namespace                                                                     #
-#       nsFullName - dotted branch(from the root to the current namespace) nodes name                                  #
+#       obj - object to check                                                                                          #
 #       Return true if it is a namespace otherwise false                                                               #
 #       Example: isNs("System.Collections")                                                                            #
 #                                                                                                                      #
 #   - public string getName()                                                                                          #
 #       Get the name of the namespace instance                                                                         #
 #                                                                                                                      #
-#   - public string getFullName() - get the namespace full name                                                        #
-#       Get the full namespace name (dotted branch namespaces nodes names)                                             #
+#   - public string getFullName()                                                                                      #
+#       Get the full namespace instance name (dotted branch namespaces nodes names)                                    #
+#                                                                                                                      #
+#   - public string getIsNamespace()                                                                                   #
+#       Get the true if instance is a namespace otherwise false                                                        #
+#                                                                                                                      #
+#   - public string getParentNamespace()                                                                               #
+#       Get the parent namespace of the namespace instance or null if the instance is a root namespace                 #
 #                                                                                                                      #
 +======================================================================================================================+
 */
 
 // Public Namespace class
-var Namespace = (function(globalContext, isExportToGlobalContext)
+(function(globalContext, rootNsFullName, isExportToGlobalContext)
 {
 	// Private static members
 	// Constants
@@ -53,10 +59,11 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 
 
 	// Defaults (constants)
-	var DefaultIsExportToGlobalContext = true;
+	var DefaultIsExportToGlobalContext = true, DefaultRootNsFullName = "SRD";
 
 	// Fields
 	var _globalContext = globalContext || this, 
+		_rootNsFullName = rootNsFullName || DefaultRootNsFullName,
 		_isExportToGlobalContext = 
 			(typeof(isExportToGlobalContext) !== TypeNames.undefined &&  isExportToGlobalContext === true) 
 			|| DefaultIsExportToGlobalContext;
@@ -127,7 +134,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 
 		if(type === TypeNames.undefined || (type === TypeNames.object && types === null))
 		{
-			result = parent[namespaceParts[index]] = new Namespace(parent);
+			result = parent[namespaceParts[index]] = new constructor(parent);
 		}
 		else
 		{
@@ -137,10 +144,10 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 		return result;
 	}
 
-	function nsSafe(namespaceName)
+	function nsSafe(nsFullName)
 	{
 
-		var namespaceParts = namespaceName.split(Separator), parent = this;
+		var namespaceParts = nsFullName.split(Separator), parent = this;
 					
 		for(var index = Zero; index < namespaceParts.length; index++)
 		{
@@ -150,7 +157,7 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 			}
 			else
 			{
-				parent = parent[namespaceParts[index]] = new Namespace(parent);
+				parent = parent[namespaceParts[index]] = new constructor(parent);
 			}
 		}
 
@@ -159,13 +166,13 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 
 
 	// Public static members
-	constructor.ns = function (namespaceName)
+	constructor.ns = function (nsFullName)
 	{
 		var result = this;
 
-		if(typeof(namespaceName) === TypeNames.string)
+		if(typeof(nsFullName) === TypeNames.string)
 		{
-			result = nsSafe(namespaceName);
+			result = nsSafe(nsFullName);
 		}
 
 		return result;
@@ -201,10 +208,10 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 					&&  nsPart.getIsNamespace() === true));
 	}
 
-	function isNsExistsSafe(nsName)
+	function isNsExistsSafe(nsFullName)
 	{
 		var result;
-		for(var nsList = nsName.split(Separator), parent = _globalContext, index = Zero, result = false; 
+		for(var nsList = nsFullName.split(Separator), parent = _globalContext, index = Zero, result = false; 
 			index < nsList.length  
 			&& (result = isNsPart(parent)); 
 			index++)
@@ -216,13 +223,13 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 	}
 
 	// Public static members
-	constructor.isNsExists = function(nsName)
+	constructor.isNsExists = function(nsFullName)
 	{
 		var result;
 
-		if(typeof(nsName) === TypeNames.string && nsName !== null)
+		if(typeof(nsFullName) === TypeNames.string && nsFullName !== null)
 		{
-			result = isNsExistsSafe(nsName);
+			result = isNsExistsSafe(nsFullName);
 		}
 		else
 		{
@@ -239,6 +246,9 @@ var Namespace = (function(globalContext, isExportToGlobalContext)
 		_globalContext.isNs = constructor.isNs;
 		_globalContext.isNsExists = constructor.isNsExists;
 	}
+
+	var rootNs = constructor.ns.apply(_globalContext, [_rootNsFullName]);
+	rootNs.Namespace = constructor;
 
 	return constructor;
 })();
