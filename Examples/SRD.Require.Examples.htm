@@ -6,13 +6,16 @@
 		<script type='text/javascript'>
 
 
-			require.useConfig({basePath:'../NonJs'}).require('SRD.Namespace').require('SRD.Namespace', '').useConfig({basePath: '../NotJs'}).require('SRD.Namespace');
+			require
+				.useConfig({isSplitName: true, basePath: 'SRD.Require.Examples'})
+				.require("TestNamespace.InnerTestNamespace.ClassOne");
+
 
 			window.addEventListener('load', function()
 				{
 					
-        				var sc = ns('System.Collection');
-					alert(sc);
+        				//var sc = ns('System.Collection');
+					//alert(sc);
 				}, false);
 		</script>
 	</head>

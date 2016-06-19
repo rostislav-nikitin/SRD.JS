@@ -14,29 +14,24 @@
 #                                                                                                                      #
 +======================================================================================================================+
 */
-if(!window.SRD)
-{
-	window.SRD = { __isNamespace: true }
-}
 
-if(!window.SRD.Require)
-{
-	window.SRD.Require = { __isNamespace: true }
-}
-
-window.SRD.Require.Extensions = (function(config, context)
+(function(context, isExportToContext)
 {
 	// Private static constants
 	var 	TypesNames = { Undefined: "undefined", String: "string", Object: "object" },
 		Zero = 0,
+		One = 1,
 		EmptyString = '',
 		PointCharacter = '.', 
 		SlashCharacter = '/',
+		DefaultIsSplitName = false,
+		DefaultIsExportToContext = true,
 		DefaultIsAddJsExtension = true,
 		DefaultJsExtension = "js",
-		DefaultConfig = { basePath: '.', isAddJsExtension:  true, jsExtension: 'js' },
+		DefaultConfig = { isSplitName: DefaultIsSplitName, basePath: '.', isAddJsExtension:  true, jsExtension: 'js' },
 	// Private static variables
 		_context = context || this,
+		_isExportToContext = isExportToContext || DefaultIsExportToContext,
 		_instance;
 	// Private static methods
 	function trim(str)
@@ -56,12 +51,12 @@ window.SRD.Require.Extensions = (function(config, context)
 	}
 
 	// The constructor
-	function constructor(config)
+	function constructor()
 	{
 		// Private instance variables
 		var 	_this = this,
-			_config = config || ((("SRD" in _context) && ("Require" in _context.SRD) && ("Config" in _context.SRD.Require)) ? _context.SRD.Require.Config : DefaultConfig),
-			_loaded = [];
+			_config = DefaultConfig,
+			_scripts = {};
 
 		// Public instance methods
 		this.useConfig = function(config)
@@ -76,6 +71,7 @@ window.SRD.Require.Extensions = (function(config, context)
 
 		this.require = function(nameOrCollection, pathOrConfig, config)
 		{
+			//alert(pathOrConfig);
 			if(typeof(nameOrCollection) === TypesNames.Object && nameOrCollection !== null && "length" in nameOrCollection)
 			{
 				requireCollection(nameOrCollection, pathOrConfig);
@@ -106,16 +102,13 @@ window.SRD.Require.Extensions = (function(config, context)
 		}
 
 
-		
 	        // Require members
 		// Require collection members
 		function requireCollection(collection, config)
 		{
-			_this.useConfig(config);
-
 			for(var index = Zero; index < collection.length; index++)
 			{
-				requireOne(collection[index].name, collection[index].path);
+				requireOne(collection[index].name, collection[index].path, config);
 			}
 		}
 
@@ -123,30 +116,105 @@ window.SRD.Require.Extensions = (function(config, context)
 		// Require one members
 		function requireOne(name, path, config)
 		{
-			_this.useConfig(config);
+			config = config || _config;
 
-		 	if(_loaded.indexOf(name) < Zero)
+			if(config.isSplitName)
 			{
-				load(name, path);
-				_loaded.push(name);
+				load(name.split(PointCharacter).join(SlashCharacter), path, config);
 			}
-
+			else
+			{
+				load(name, path, config);
+			}
 		}
+
+		var LoadTypes =
+		{
+			NotExists: -1,
+			NotLoaded: 0,
+			Loading: 1,
+			Loaded: 2
+		};
 
 		// Private instance methods
-		function load(name, path)
+
+		function load(name, path, config)
 		{
-			path = getPath(name, path);
-			add(path);
+			var loadStatus = getLoadStatus(name);
+
+			if(loadStatus !== LoadTypes.Loaded)
+			{
+				addToQueue(name, path, config)
+			}
+
+			if(loadStatus !== LoadTypes.Loading && loadStatus !== LoadTypes.Loaded)
+			{
+				loadNext(name);
+			}
 		}
 
-		function getPath(name, path)
+		function addToQueue(name, path, config)
+		{
+			var path = getPath(name, path, config);
+
+			if(name in _scripts)
+			{
+				_scripts[name].queue.push(path);
+			}
+			else
+			{
+				_scripts[name] = {loadStatus: LoadTypes.NonLoaded, queue: [path]};
+			}
+		}
+
+		function loadNext(name)
+		{
+			if(name in _scripts && _scripts[name].queue.length != Zero)
+			{
+				var nextPath = _scripts[name].queue.splice(Zero, One);
+				add(name, nextPath);
+			}
+		}
+
+		function loaded(name)
+		{
+			setLoadStatus(name, LoadTypes.Loaded);
+		}
+
+		function notLoaded(name)
+		{
+			loadNext(name);
+		}
+
+		function setLoadStatus(name, status)
+		{
+			_scripts[name].LoadStatus = status;
+		}
+
+		function getLoadStatus(name)
+		{
+			var result;
+
+			if(name in _scripts)
+			{
+				result = _scripts[name].loadStatus;
+			}
+			else
+			{
+				result = LoadTypes.NotExists;				
+			}
+
+			return result;	
+		}
+
+
+		function getPath(name, path, config)
 		{
 			var result;
 
 			if(typeof(path) !== TypesNames.String || trim(path) === EmptyString)
 			{
-				result = buildPath(name);
+				result = buildPath(name, config);
 			}
 			else
 			{
@@ -156,13 +224,13 @@ window.SRD.Require.Extensions = (function(config, context)
 			return result;
 		}
 
-		function buildPath(name)
+		function buildPath(name, config)
 		{
 			var result;
 
-			if(_config.isAddJsExtension)
+			if(config.isAddJsExtension)
 			{
-				result = _config.basePath + SlashCharacter + name + PointCharacter + _config.jsExtension;
+				result = config.basePath + SlashCharacter + name + PointCharacter + config.jsExtension;
 			}
 			else
 			{
@@ -174,19 +242,11 @@ window.SRD.Require.Extensions = (function(config, context)
 		
 		var TagHead = "head";
 
-		function add(path)
+		function add(name, path)
 		{
 			var head = getHead(),
-				scriptTag = buildScriptTag(path);
-
-			try
-			{
-				head.appendChild(scriptTag);
-			}
-			catch(error)
-			{
-				logError(error);
-			}
+				scriptTag = buildScriptTag(name, path);
+			head.appendChild(scriptTag);
 		}
 
 		function getHead()
@@ -223,22 +283,52 @@ window.SRD.Require.Extensions = (function(config, context)
 
 		var TagScript = "script";
 		var TagScriptTypeTextJavaScript = "text/javascript";
+
+		var ScriptTagEventNames = 
+		{
+			Load: 'load',
+			Error: 'error'
+		}
 		
-		function buildScriptTag(path)
+		function buildScriptTag(name, path)
 		{
 			var scriptTag = _context.document.createElement(TagScript);
-			scriptTag.type = TagScriptTypeTextJavaScript;
-			scriptTag.onerror = function(eventObj) 
-			{
-				var errorMessage = 'Can\'t load script file for a next path: "' + path + '".';
-				logError(new Error(errorMessage));
-			};
-			scriptTag.src = path;
-
+			configureScriptTag(scriptTag, name, path);
 			return scriptTag;
 		}
 
+		function configureScriptTag(scriptTag, name, path)
+		{
+			scriptTag.type = TagScriptTypeTextJavaScript;
+			attachScriptTagEventHandlers(scriptTag, name, path);
+			scriptTag.src = path;
+		}
+
+		function attachScriptTagEventHandlers(scriptTag, name, path)
+		{
+			scriptTag.addEventListener(ScriptTagEventNames.Load, function(eventObj)
+			{
+				loaded(name);
+			}, false);
+
+			scriptTag.addEventListener(ScriptTagEventNames.Error, function(eventObj) 
+			{
+				var errorMessage = 'Can\'t load script file for a next name: "' + name + '" with a next path: "' + path + '".';
+				logError(new Error(errorMessage));
+				notLoaded(name);
+			}, false);
+		}
+
 		// Helpers private members
+
+		function initializeConfig()
+		{
+			if(("SRD" in _context) && ("Require" in _context.SRD) && ("Config" in _context.SRD.Require))
+			{
+				_this.useConfig(_context.SRD.Require.Config);
+			}
+		}
+
 		function logError(error)
 		{
 			var LogWarningType = "Warning";
@@ -252,6 +342,9 @@ window.SRD.Require.Extensions = (function(config, context)
 				alert(error.message);
 			}
 		}
+	
+		// Constructor code
+		initializeConfig();
 	}
 
 	function getInstance()
@@ -272,11 +365,33 @@ window.SRD.Require.Extensions = (function(config, context)
 
 	// Create the class instance.
 	//_instance = new constructor();
+	/*
+	Maybe we will decide to store it inside a namespace
+	function createNsInternal(namespaceName)
+	{
+		var parent = _context,
+			namespaces = namespaceName.split(PointCharacter);
+		for(var index = Zero; index < namespaces.length; index++)
+		{
+			parent = parent[namespaces[index]] = new { __isNamespace: true , __parentNamespace: parent };
+		}
+
+		return parent;
+	}
+
+	var createNs = ((typeof(_context.SRD) === TypesNames.Object && typeof(_context.SRD.Namespace) === TypesNames.Object 
+		&& typeof(_context.SRD.Namespace.ns) === TypesNames.Function) ? _context.SRD.ns : createNsInternal );
+	*/
+	if(_isExportToContext)
+	{
+
+		//createNs('SRD.Require').Extensions = result;
+		// Export a reference to the only one require method.
+		_context.require = result.getInstance().require;
+		// Add to the require method a 'config' member. It is a refrence to the extensions singleton setConfig method.
+		_context.require.useConfig = result.getInstance().useConfig;
+	}
 
 	return result;
 })();
 
-// Export a reference to the only one require method.
-var require = SRD.Require.Extensions.getInstance().require;
-// Add to the require method a 'config' member. It is a refrence to the extensions singleton setConfig method.
-require.useConfig = SRD.Require.Extensions.getInstance().useConfig;
