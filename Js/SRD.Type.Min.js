@@ -1,0 +1,1 @@
+!function(e,n){function t(e){var n;return n=typeof e===o.Undefined?o.Undefined:Object.prototype.toString.call(e).match(/\s([^\]]*)/)[r].toLowerCase()}var o={Undefined:"undefined",Boolean:"boolean",Number:"number",String:"string",Function:"function",Array:"array",Object:"object"},r=1,i=!0,a=e||this,c=n||i;c&&(a.TypesNames=o,a.typeOf=t)}();
