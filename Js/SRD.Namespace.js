@@ -132,7 +132,7 @@
 	{
 		var type = typeof(parent[namespaceParts[index]]), result = null;
 
-		if(type === TypeNames.undefined || (type === TypeNames.object && types === null))
+		if(type === TypeNames.undefined || (type === TypeNames.object && type === null))
 		{
 			result = parent[namespaceParts[index]] = new constructor(parent);
 		}
