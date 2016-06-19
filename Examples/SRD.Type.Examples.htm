@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<title>SRD.Type :: Examples</title>
+		<style type='text/css'>
+			#console {color: Green; font-size: 150%;}
+		</style>
+		<script type='text/javascript' src='../Js/SRD.Type.js'></script>
+		<script type='text/javascript'>
+			function writeLine(message)
+			{
+				var LineBreak = '<br />', consoleId = 'console', console = document.getElementById(consoleId);
+        			console.innerHTML += message + LineBreak;
+			}
+		
+			window.addEventListener('load', function()
+			{
+				writeLine('typeOf() ===' + typeOf());
+				writeLine('typeOf(true) ===' + typeOf(true));
+				writeLine('typeOf(1) ===' + typeOf(1));
+				writeLine('typeOf("This is a string.") ===' + typeOf('This is a string.'));
+				writeLine('typeOf(function(){return true;}) ===' + typeOf(function(){return true}));
+				writeLine('typeOf([]) ===' + typeOf([]));
+				writeLine('typeOf({}) ===' + typeOf({}));
+				writeLine('typeOf(window) ===' + typeOf(window));
+				writeLine('typeOf(window.document) ===' + typeOf(window.document));
+				writeLine('typeOf(window.document.body) ===' + typeOf(window.document.body));
+				writeLine('typeOf(Math) ===' + typeOf(Math));
+				writeLine('typeOf(NaN) ===' + typeOf(NaN));
+				writeLine('typeOf(("Test").substr) ===' + typeOf(("Test").substr));
+				writeLine('typeOf(("Test").substr) ===' + typeOf(("Test").substr));
+				writeLine('typeOf(window.document.getElementById("console")) ===' + typeOf(window.document.getElementById("console")));
+			}, false);
+		</script>
+	<head>
+	<body>
+		<div id='console' />
+	</body>
+</html>
