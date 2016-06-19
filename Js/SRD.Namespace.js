@@ -44,12 +44,12 @@
 	// Private static members
 	// Constants
 	//  Types
-	var TypeNames = 
+	var TypesNames = 
 	{
-		string: 'string', 
-		object: 'object', 
-		undefined: 'undefined', 
-    		function:  'function'
+		String: 'string', 
+		Object: 'object', 
+		Undefined: 'undefined', 
+		Function:  'function'
 	};
 
 	//  Numbers
@@ -65,7 +65,7 @@
 	var _globalContext = globalContext || this, 
 		_rootNsFullName = rootNsFullName || DefaultRootNsFullName,
 		_isExportToGlobalContext = 
-			(typeof(isExportToGlobalContext) !== TypeNames.undefined &&  isExportToGlobalContext === true) 
+			(typeof(isExportToGlobalContext) !== TypesNames.Undefined &&  isExportToGlobalContext === true) 
 			|| DefaultIsExportToGlobalContext;
 
 
@@ -115,11 +115,11 @@
 		{
 			var parts = [], currentNamespace = _this;
 
-			while(typeof(currentNamespace.getParentNamespace) === TypeNames.function && 
-				typeof(currentNamespace.getParentNamespace()) === TypeNames.object && 
+			while(typeof(currentNamespace.getParentNamespace) === TypesNames.Function && 
+				typeof(currentNamespace.getParentNamespace()) === TypesNames.Object && 
 				currentNamespace.getParentNamespace() !== null)
 			{
-				parts.splice(Number.Zero, Number.Zero, currentNamespace.getName());
+				parts.splice(Zero, Zero, currentNamespace.getName());
 				currentNamespace = currentNamespace.getParentNamespace();
 			}
 
@@ -130,15 +130,17 @@
 	// Private static members
 	function getParent(parent, namespaceParts, index)
 	{
-		var type = typeof(parent[namespaceParts[index]]), result = null;
+		var obj = parent[namespaceParts[index]], 
+			type = typeof(obj), 
+			result = null;
 
-		if(type === TypeNames.undefined || (type === TypeNames.object && type === null))
+		if(type === TypesNames.Undefined || obj === null)
 		{
 			result = parent[namespaceParts[index]] = new constructor(parent);
 		}
 		else
 		{
-			result = parent[namespaceParts[index]];
+			result = obj;
 		}
 
 		return result;
@@ -170,7 +172,7 @@
 	{
 		var result = this;
 
-		if(typeof(nsFullName) === TypeNames.string)
+		if(typeof(nsFullName) === TypesNames.String)
 		{
 			result = nsSafe(nsFullName);
 		}
@@ -181,7 +183,7 @@
 	constructor.isNs = function(obj)
 	{
 		var result;
-		if(typeof(obj) === TypeNames.object && obj !== null && typeof(obj.getIsNamespace) === TypeNames.function)
+		if(typeof(obj) === TypesNames.Object && obj !== null && typeof(obj.getIsNamespace) === TypesNames.Function)
 		{
 			result = obj.getIsNamespace() === true;
 		}
@@ -202,9 +204,9 @@
 
 	function isNsPart(nsPart)
 	{
-		return typeof(nsPart) === TypeNames.object
+		return typeof(nsPart) === TypesNames.Object
 				&& nsPart !== null
-				&& (nsPart === _globalContext || (typeof(nsPart.getIsNamespace) === TypeNames.function
+				&& (nsPart === _globalContext || (typeof(nsPart.getIsNamespace) === TypesNames.Function
 					&&  nsPart.getIsNamespace() === true));
 	}
 
@@ -227,7 +229,7 @@
 	{
 		var result;
 
-		if(typeof(nsFullName) === TypeNames.string && nsFullName !== null)
+		if(typeof(nsFullName) === TypesNames.String && nsFullName !== null)
 		{
 			result = isNsExistsSafe(nsFullName);
 		}
