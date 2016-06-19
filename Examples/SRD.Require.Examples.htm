@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title>SRD.Require :: Examples</title>
+		<script type='text/javascript' src='../Js/SRD.Require.Config.js'></script>
+		<script type='text/javascript' src='../Js/SRD.Require.js'></script>
+		<script type='text/javascript'>
+
+
+			require
+				.useConfig({isSplitName: true, basePath: 'SRD.Require.Examples'})
+				.require("TestNamespace.InnerTestNamespace.ClassOne");
+
+
+			window.addEventListener('load', function()
+				{
+					
+        				//var sc = ns('System.Collection');
+					//alert(sc);
+				}, false);
+		</script>
+	</head>
+	<body>
+		
+	</body>
+</html>
