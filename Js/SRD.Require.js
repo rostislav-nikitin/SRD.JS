@@ -14,13 +14,10 @@
 #                                                                                                                      #
 +======================================================================================================================+
 */
-//TODO: Implement require as deferred. To make possible to make: require('class').require('class2').execute(function(){}, context);
-//	First it will load asynchronously class1, second class two, and at least when all dependencies are 
-//	loaded it will execute class3 code
 (function(context, isExportToContext)
 {
 	// Private static constants
-	var 	TypesNames = { Undefined: 'undefined', String: 'string', Function: 'function', Object: 'object' },
+	var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean', String: 'string', Function: 'function', Object: 'object' },
 		Zero = 0,
 		One = 1,
 		EmptyString = '',
@@ -121,10 +118,15 @@
 
 						_arguments = copyArguments(arguments);
 
-						_this.onSuccess(require);
-						_this.onError(_this.deferred.error);
+						attachHandlers();
 
         					return _this.deferred;
+					}
+
+					function attachHandlers()
+					{
+						_this.onSuccess(require);
+						_this.onError(_this.deferred.error);
 					}
 
 					this.begin = function()
@@ -132,34 +134,75 @@
 						_tasksCount++;
 					}
 
-					this.error = function(message)
+					this.error = function(error)
 					{
 						_tasksCount--;
 
 						if(_error instanceof Function)
 						{
-							_error.apply(this, [message]);
+							errorSafe(error)
+						}
+					}
+
+					function errorSafe(error)
+					{
+						try
+						{
+							var result = _error.apply(this, [error]);
+							continueChain(result);
+						}
+						catch(error)
+						{
+							//TODO: Log an error.
+						}
+					}
+
+					function continueChain(result)
+					{
+						if((typeof result === TypesNames.Boolean) && result)
+						{
+							_this.begin();
+							_this.success();
 						}
 					}
 
 					this.success = function()
 					{
-
 						_tasksCount--;
 						if(_tasksCount === Zero && _success instanceof Function)
 						{
-							//debugger;
-							var applyResult = _success.apply(this, _arguments);
-							if(typeof applyResult !== TypesNames.Undefined 
-								&& applyResult !== null
-								&& "onSuccess" in applyResult
-								&& "onError" in applyResult)
-							{
-								applyResult
-									.onSuccess(_this.deferred.success)
-									.onError(_this.deferred.error);
-							}
+							successSafe();
 						}
+					}
+
+					function successSafe()
+					{
+						try
+						{
+							var applyResult = _success.apply(this, _arguments);
+							// Attach handlers. They will be called when the async method (if not async then nothing will be attached) will done.
+							attachDeferredHandlers(applyResult);
+						}
+						catch(error)
+						{
+							//alert(error);
+							//TODO: Log an error.
+						}
+					}
+
+					function attachDeferredHandlers(obj)
+					{
+						if(typeof obj !== TypesNames.Undefined && obj !== null
+							&& (obj.onSuccess instanceof Function)
+							&& (obj.onError instanceof Function)
+							&& (_this.deferred instanceof Object) && _this.deferred !== null
+							&& (_this.deferred.success instanceof Function)
+							&& (_this.deferred.error instanceof Function))
+						{
+							obj.onSuccess(_this.deferred.success);
+							obj.onError(_this.deferred.error);
+						}
+
 					}
 
 					this.onSuccess = function(callback)
@@ -330,15 +373,16 @@
 		function deferredLoadError(name)
 		{
 			//debugger;
-			var errorMessage = 'Can not load script file for the "' + name + '" with path: "' + scriptPeek(name).path + '".';
-			deferredError(name, errorMessage);
+			var 	errorMessage = 'Can not load script file for the "' + name + '" with path: "' + scriptPeek(name).path + '".',
+				error = new Error(errorMessage);
+			deferredError(name, error);
 		}
 
-		function deferredError(name, errorMessage)
+		function deferredError(name, error)
 		{
 			if(name in _scripts)
 			{
-        			scriptPeek(name).deferred.error(errorMessage);
+        			scriptPeek(name).deferred.error(error);
 				scriptDequeue(name);
 			}
 		}
@@ -567,7 +611,7 @@
 			}
 			else
 			{
-				alert(error.message);
+				//alert(error.message);
 			}
 		}
 	
@@ -591,30 +635,10 @@
 		getInstance: getInstance
 	};
 
-	// Create the class instance.
-	//_instance = new constructor();
-	/*
-	Maybe we will decide to store it inside a namespace
-	function createNsInternal(namespaceName)
-	{
-		var parent = _context,
-			namespaces = namespaceName.split(PointCharacter);
-		for(var index = Zero; index < namespaces.length; index++)
-		{
-			parent = parent[namespaces[index]] = new { __isNamespace: true , __parentNamespace: parent };
-		}
-
-		return parent;
-	}
-
-	var createNs = ((typeof(_context.SRD) === TypesNames.Object && typeof(_context.SRD.Namespace) === TypesNames.Object 
-		&& typeof(_context.SRD.Namespace.ns) === TypesNames.Function) ? _context.SRD.ns : createNsInternal );
-	*/
 	if(_isExportToContext)
 	{
 
-		//createNs('SRD.Require').Extensions = result;
-		// Export a reference to the only one require method.
+		// Export a reference to the only one require method inside a context.
 		_context.require = result.getInstance().require;
 		// Add to the require method a 'config' member. It is a refrence to the extensions singleton setConfig method.
 		_context.require.useConfig = result.getInstance().useConfig;
