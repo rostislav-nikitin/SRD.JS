@@ -1,0 +1,43 @@
+<html>
+	<head>
+		<title>SRD.LINQ :: Examples</title>
+		<style type='text/css'>
+			#console {color: Green; font-size: 150%;}
+		</style>
+		<script type='text/javascript' src='../Js/SRD.Require.js'></script>
+		<script type='text/javascript'>
+			var strAsStr = 'The string.',
+				strAsObj = new String('The string.');
+			//alert(strAsStr instanceof String);
+			//alert(strAsObj instanceof String);
+			var obj = null;
+			//alert(obj === null)	
+			require
+				.useConfig({basePath: '../Js', isSplitNames: false})
+				.require('SRD.Namespace')
+				.require('SRD.Type')
+				.require('SRD.LINQ')
+				.onSuccess(function(){ writeLine('Required components loaded'); })
+				.onError(function(errorMessage) { alert(errorMessage); });
+			;
+
+			function writeLine(message)
+			{
+				var LineBreak = '<br />', consoleId = 'console', console = document.getElementById(consoleId);
+        			console.innerHTML += message + LineBreak;
+			}
+
+			window.addEventListener('load', function()
+				{
+					var array = [1, 2, 3];
+					var copiedArray = linq(array).copy();
+					writeLine('copied array instanceof Array =' + (copiedArray instanceof Array));
+					writeLine('Copied array type is:' + typeOf(copiedArray));
+					writeLine('Copied array length is: ' + copiedArray.length);
+				}, false);
+		</script>
+	</head>
+	<body>
+		<div id="console"></div>
+	</body>	
+</html>
