@@ -10,24 +10,38 @@
 
 			function writeLine(message)
 			{
-				var LineBreak = '<br />', consoleId = 'console', console = document.getElementById(consoleId);
-        			console.innerHTML += message + LineBreak;
+				var TagLiBegin = '<li>', TagLiEnd = '</li>', LineBreak = '<br />', consoleId = 'console', console = document.getElementById(consoleId);
+        			console.innerHTML += TagLiBegin + message + TagLiEnd;
 			}
 
 			require
 				.useConfig({isSplitName: true, basePath: 'SRD.Require.Examples'})
 					.require('SRD.Namespace', null, {isSplitName: false, basePath: '../Js'})
 					.require('SRD.Type', null, {isSplitName: false, basePath: '../Js'})
-					.require("TestNamespace.InnerTestNamespace.ClassOne")
-					.onSuccess(function() { ns('SRD.Collection').Queue = (function(){ writeLine('SRD.Collection.Queue type contructed...'); return Array; })(); });
+					.require('TestNamespace.InnerTestNamespace.ClassOne')
+					.require('MissingLibrary')
+					.onError(function (error)
+						{ 
+							writeLine(error.message); 
+							// Return true to continue loading
+						 	return true; 
+						})
+					.onSuccess(function() { ns('SRD.Collection').Queue = (function(){ writeLine('SRD.Collection.Queue type constructed...'); return Array; })(); });
 
 
 			window.addEventListener('load', function()
 				{
 					//alert(SRD.Collection.Queue);
-					var queue = new SRD.Collection.Queue();
-					writeLine('typeOf(queue) = \'' + typeOf(queue) + '\'');
-					writeLine('queue instanceof Array = ' + (queue instanceof Array));
+					try
+					{
+						var queue = new SRD.Collection.Queue();
+						writeLine('typeOf(queue) = \'' + typeOf(queue) + '\'');
+						writeLine('queue instanceof Array = ' + (queue instanceof Array));
+					}
+					catch(error)
+					{
+						writeLine(error.message);
+					}
 					
         				//var sc = ns('System.Collection');
 					//alert(sc);
@@ -35,6 +49,6 @@
 		</script>
 	</head>
 	<body>
-		<div id="console"></div>		
+		<ul id="console"></ul>		
 	</body>
 </html>
