@@ -149,7 +149,7 @@
 	function nsSafe(nsFullName)
 	{
 
-		var namespaceParts = nsFullName.split(Separator), parent = this;
+		var namespaceParts = nsFullName.split(Separator), parent = _globalContext;
 					
 		for(var index = Zero; index < namespaceParts.length; index++)
 		{
@@ -170,7 +170,7 @@
 	// Public static members
 	constructor.ns = function (nsFullName)
 	{
-		var result = this;
+		var result = _globalContext;
 
 		if(typeof(nsFullName) === TypesNames.String)
 		{
