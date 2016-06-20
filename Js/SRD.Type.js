@@ -22,6 +22,7 @@
 			Boolean: "boolean",
 			Number: "number",
 			String: "string",
+			StringObject: 'string object',
 			Function: "function",
 			Array: "array",
 			Object: "object",
@@ -34,14 +35,15 @@
 
 	function typeOf(obj)
 	{
-		var result;
-		if(typeof(obj) === TypesNames.Undefined)
+		var result = typeof(obj);
+
+                if(obj instanceof String)
+                {
+                      result = TypesNames.StringObject;
+                }
+		else if(result !== TypesNames.Undefined)
 		{
-			result = TypesNames.Undefined;
-		}
-		else
-		{
-			result = Object.prototype.toString.call(obj).match(/\s([^\]]*)/)[One].toLowerCase();
+			result = Object.prototype.toString.call(obj).match(/\s([^\]]*)/)[1].toLowerCase();
 		}
 
 		return result;
