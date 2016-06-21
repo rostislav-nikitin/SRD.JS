@@ -1,18 +1,35 @@
 (function(mountPoint, dependencies)
 {
-		var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean' },
-			CompleteTypes = { Done: 0, Failed: 1 };
-			Zero = 0,
-			One = 1,
-			Two = 2;
+	var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean' },
+		CompleteTypes = { Done: 0, Failed: 1 };
+		Zero = 0,
+		One = 1,
+		Two = 2;
+
+	function slice(collection, fromIndex)
+	{
+		var result;
+
+		if(fromIndex < collection.length)
+		{
+			result = Array.prototype.slice.call(collection, fromIndex);
+		}
+		else
+		{
+			result = [];
+		}
+
+		return result;
+	}
+
 
 	var _dependencies = dependencies || {},
 		logger = dependencies.logger || null;
 		
-	function constructor()
+	function constructor(context, method)
 	{
 		var 	_this = this,
-			_callParameters = null,
+			_callParameters = { isDone: false, isInProgress: false },
 			// Completed queues. When no success, error handlers attached it collect done, error calls to don't forget them.
 			_completed = [],
 			// The flag that indicates that done or faile was processed (calles succes or error handled)
@@ -38,6 +55,24 @@
 			complete();
 
 			return _deferred;
+		}
+
+		// Get the flag that indicates is operation already done.
+		this.getIsDone = function()
+		{
+			return _callParameters.isDone;
+		}
+
+		// Get the operation error or null.
+		this.getError = function()
+		{
+			return _callParamters.error || null;
+		}
+
+		// Get the operation call result or null.
+		this.getCallResult = function()
+		{
+			return _callParamters.callResult || null;
 		}
 
 		// Should be executed before wait for done or error. May be done or fail was called before.
@@ -266,11 +301,12 @@
 		// The method that calls operation and process result.
 		function callNext(currentResult)
 		{
-			if(!!_callParameters.isDone)
+			if(!_callParameters.isInProgress)
 			{
+				_callParameters.isInProgress = true;
 				var     callArgs = createCallArgs(_callParameters.argsCollection, currentResult),
-					callResult = callSafe(_callParameters.context, _callParameters.method, callArgs);
-				processResult(callResult);
+					wrappedCallResult = callMethod(_callParameters.context, _callParameters.method, callArgs);
+				handleCallResult(wrappedCallResult);
 			}
 		}
 
@@ -282,19 +318,64 @@
 			return result;
 		}
 
-		// The method that process operation call result.
-		function processCallResult(callResult)
+		function callMethod(context, method, args)
 		{
-			if(!isDeferred(callResult))
+			var result = {};
+
+			try
 			{
-				_callParameters.result = callResult;
-				executedSuccessfully();
+				result.callResult = method.apply(context, args);
+			}
+			catch(error)
+			{
+				result.error = error;
+			}
+
+			return result;
+		}
+
+		// The method that process operation call result.
+		function handleCallResult(wrappedCallResult)
+		{
+			if(!wrappedCallResult.error)
+			{
+				handleSimpleErrorCallResult(wrappedCallResult.error);
+			}
+			else if(!isDeferred(wrappedCallResult.callResult))
+			{
+				handleSimpleSuccessCallResult(wrappedCallResult.callResult);
 			}
 			else
 			{
-				_callParameters.callResultDeferred = callResult;
-				attachToCallResultDeferredSafe();
+				handleDeferredCallResult(wrappedCallResult.callResult);
 			}
+		}
+
+		function handleSimpleErrorCallResult(error)
+		{
+			methodCalled();
+			_callParameters.error = error;
+			callDeferredFailed();
+		}
+
+		function handleSimpleSuccessCallResult(callResult)
+		{
+			methodCalled();
+			_callParameters.callResult = callResult;
+			callDeferredDone();
+		}
+
+		function handleDeferredCallResult(callResultDeferred)
+		{
+			_callParameters.callResultDeferred = callResultDeferred;
+			attachToCallResultDeferredSafe();
+						
+		}
+
+		function methodCalled()
+		{
+			_callParameters.isDone = true;
+			_callParameters.isInProgress = false;
 		}
 
 		function isDeferred(callResult)
@@ -305,11 +386,6 @@
 			return result;
 		}
 
-		function executedSuccessfully()
-		{
-			_callParameters.isDone = true;
-			callDeferredDone();
-		}
 
 		function callDeferredDone()
 		{
@@ -337,7 +413,7 @@
 
 		function attachCallResultDeferredOnSuccess()
 		{
-			var callResultDferred = _callParameters.callResultDeferred;
+			var callResultDeferred = _callParameters.callResultDeferred;
 
 			if (callResultDeferred.onSuccess instanceof Function)
 			{
@@ -347,7 +423,7 @@
 
 		function attachCallResultDeferredOnError()
 		{
-			var callResultDferred = _callParameters.callResultDeferred;
+			var callResultDeferred = _callParameters.callResultDeferred;
 
 			if(callResultDeferred.onError instanceof Function)
 			{
@@ -359,6 +435,7 @@
 		function callResultDeferredSuccess(callResult)
 		{
 			_callParameters.callResult = callResult;
+			methodCalled();
 			callDeferredDone();
 		}
 
@@ -366,6 +443,7 @@
 		function callResultDeferredError(error)
 		{
 			_callParameters.error = error;
+			methodCalled();
 			callDeferredFailed();
 		}
 
@@ -414,7 +492,7 @@
 				{
 					context = argsCollection[Zero];
 					method = argsCollection[One];
-					argsColection = Array.prototype.slice.call(argsCollection, Two) || [];
+					argsColection = slice(argsCollection, Two);
 				};
 
 		}
@@ -439,6 +517,7 @@
 			}
 		}
 
+
 		function logError(error)
 		{
 			if(logger != null)
@@ -447,15 +526,115 @@
 			}
 		}
 
+		//return _this.single(context, method, slice(arguments, Two));
 	}
 
-	constructor.single = function(contex, func)
+	constructor.single = function(context, func)
 	{
-		return func.apply(context || this, func, Array.prototype.slice.call(arguments, Two));
+		var deferred = new constructor(),
+			result = deferred.single(context || this, func, slice(arguments, Two));
+
+		deferred.done();
+
+		return result;
+	}
+
+	constructor.any = function(context, callsInfos)
+	{
+		var result = many(context, callsInfos,
+			function(allResults, successCount)
+			{
+				var result = successCont > Zero;
+
+				return result;
+			});
+
+		return result;
+	}
+
+	constructor.all = function(context, callsInfos)
+	{
+
+		var result = many(context, callsInfos,
+			function(allResults, successCount) 
+			{ 
+				var result = allResults.length === successCount;
+
+				return result;
+			});
+
+		return result;
+	}
+
+	function many(context, callsInfos, donePredicate)
+	{
+		var processingInfo = manyInitializeProcessingInfo(context, callsInfos);
+
+		manyInitialize(processingInfo, donePredicate);
+
+		manyExecute(processingInfo);
+
+		return processingInfo.deferred;
+
+	}
+
+	function manyInitializeProcessingInfo(context, callsInfos)
+	{
+		var result = 
+			{	
+				context: context,
+				callsInfos: callsInfos,
+				deferred: new constructor(), 
+				callsResults: [],  
+				successCount: Zero 
+			};
+		return result;
+
+	}
+
+	function manyInitialize(processingInfo, donePredicate)
+	{
+		for(var index = Zero; index < processingInfo.callsInfos.length; index++)
+		{
+			var callInfo = processingInfo.callsInfos[index],
+				callDeferred = new constructor(),
+				singleDeferred = callDeferred.single.apply(this, callInfo.func, [callInfo.context || processingInfo.context || this].concat(callInfo.args || []));
+			manyAttachSingleDeferredHandlers(processingInfo, singleDeferred, donePredicate);
+			processingInfo.callsResults.push(singleDeferred);
+		}
+
+	}
+
+	function manyAttachSingleDeferredHandlers(processingInfo, singleDeferred, donePredicate)
+	{
+		singleDeferred.onError(function(error) 
+			{
+				for(var index = Zero; index < processingInfo.callResults.length; index++)
+				{
+					processingInfo.callResults[index].abort();
+				}
+				processingInfo.deferred.failed(error); 
+			} );
+
+		singleDeferred.onSuccess(function(error)
+			{
+				if(donePredicate(processingInfo.callsResults, ++processingInfo.successCount))
+				{
+					processingInfo.deferred.done();
+				} 
+			});
+	}
+
+	function manyExecute(processingInfo)
+	{
+		for(var index = Zero; index < processingInfo.callsResults; index++)
+		{
+			var callResult = processingInfo.callsResults[index];
+			callResult.done();
+		}
 	}
 
 	//return constructor;
-
 	if(typeof mountPoint !== TypesNames.Undefined)
 	{
 		mountPoint.Deferred = constructor;
