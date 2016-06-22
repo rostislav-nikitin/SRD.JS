@@ -1,7 +1,8 @@
 (function(mountPoint, dependencies)
 {
 	var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean' },
-		CompleteTypes = { Done: 0, Failed: 1 };
+		CompleteTypes = { Failed: 0, Done: 1 },
+		CallStatus = { NonInitialized: -1, NotStarted: 0, InProgress: 1, Error: 2, Success: 4 },
 		Zero = 0,
 		One = 1,
 		Two = 2;
@@ -24,12 +25,12 @@
 
 
 	var _dependencies = dependencies || {},
-		logger = dependencies.logger || null;
+		logger = _dependencies.logger || null;
 		
 	function constructor(context, method)
 	{
 		var 	_this = this,
-			_callParameters = { isDone: false, isInProgress: false },
+			_callParameters = { callStatus: CallStatus.NonInitialized },
 			// Completed queues. When no success, error handlers attached it collect done, error calls to don't forget them.
 			_completed = [],
 			// The flag that indicates that done or faile was processed (calles succes or error handled)
@@ -43,14 +44,22 @@
 			_errorCommon,
 			_doneCount = Zero;
 
-
+			
 		// The mehtod that executes a single func with a specified funcArgs
 		// Returns a Deffered object
-		this.single = function(context, method)
+		this.init = function(context, method)
 		{
 			enqueue(arguments);
 
+			//return _deferred;
+			return _this;
+		}
+
+		this.single = function(context, method)
+		{
 			createDeferred();
+
+			_deferred.init(context, method, slice(arguments, Two));
 
 			complete();
 
@@ -60,19 +69,26 @@
 		// Get the flag that indicates is operation already done.
 		this.getIsDone = function()
 		{
-			return _callParameters.isDone;
+			return _callParameters.callStatus === CallStatus.Success
+				|| _callParameters.callStatus === CallStatus.Error;
+		}
+
+		// Get the operation call status: not started, in progress, error, success.
+		this.getCallStatusType = function()
+		{
+			return _callParameters.callStatus;
 		}
 
 		// Get the operation error or null.
 		this.getError = function()
 		{
-			return _callParamters.error || null;
+			return _callParameters.error || null;
 		}
 
 		// Get the operation call result or null.
 		this.getCallResult = function()
 		{
-			return _callParamters.callResult || null;
+			return _callParameters.callResult || null;
 		}
 
 		// Should be executed before wait for done or error. May be done or fail was called before.
@@ -81,14 +97,17 @@
 			while(_completed.length !== Zero)
 			{
 				completeOne(_completed[Zero]);
+				completedDequeue();
 			}
 		}
 
 		// Complete processors hash. Each processor process it's own complete type: done, failed, etc...
 		var completeProcessors = 
 		{
-			CompleteTypes.Done: function(completeParameters) { continueExecution(completeParameters.callResult); },
-			CompleteTypes.Failed: function(completeParameters) { continueExecution(completeParamters.error); }
+			// CompleteTypes.Failed: 
+			0: function(completeParameters) { _deferred.error(completeParamters.error); },
+			// CompleteTypes.Done: 
+			1: function(completeParameters) { _deferred.done(completeParameters.callResult); }
 		};
 
 		function completeOne(completeParameters)
@@ -107,7 +126,7 @@
 
 		function isProcess()
 		{
-			var result = !_callParameters || !(_callParameters.isDone === true);
+			var result = !_callParameters || (_callParameters.callStatus === CallStatus.NotStarted);
 			return result;
 		}
 
@@ -128,13 +147,14 @@
 		function doneInternal(callResult)
 		{
 			// If any returns false - stop chain execution otherwise continue.
-			var isStop = (callSuccess(callResult) === false)
-				| ( _this.successCommon(callResult) === false);
-
+			var isStop = (callSuccess(callResult) === false);
+			isStop = ( _this.successCommon(callResult) === false) || isStop;
+			
 			if(!isStop)
 			{
 				continueExecution(callResult);
 			}
+			else
 			{
 				_isChainProcessed = true;
 			}
@@ -151,7 +171,7 @@
 
 		function failed(error)
 		{
-			_completed.push({ completeType: CompleteTypes.Failed: true, error: error });
+			_completed.push({ completeType: CompleteTypes.Failed, error: error });
 
 			_isChainProcessed = false;
 
@@ -191,7 +211,7 @@
 		}
 
 		// The method that should be called to execute sync success common callback.
-		this.successCommon(callResult)
+		this.successCommon = function(callResult)
 		{
 			var 	successCommonResult = callSuccessCommon(callResult),
 				deferredSuccessCommonResult = callDeferredSuccessCommon(callResult),
@@ -291,19 +311,18 @@
 		// This need to continue execution of a current deffered task(s).
 		function continueExecution(currentResult)
 		{
-			if(_callParameters !== null)
+			if(_callParameters !== null && _callParameters.callStatus === CallStatus.NotStarted)
 			{
 				callNext(currentResult);
-				_isChainProcessed = true;
 			}
 		}
 
 		// The method that calls operation and process result.
 		function callNext(currentResult)
 		{
-			if(!_callParameters.isInProgress)
+			if(_callParameters.callStatus === CallStatus.NotStarted)
 			{
-				_callParameters.isInProgress = true;
+				_callParameters.callStatus = CallStatus.InProgress;
 				var     callArgs = createCallArgs(_callParameters.argsCollection, currentResult),
 					wrappedCallResult = callMethod(_callParameters.context, _callParameters.method, callArgs);
 				handleCallResult(wrappedCallResult);
@@ -313,22 +332,28 @@
 		function createCallArgs(argsCollection, currentResult)
 		{
 			var result = (argsCollection || []).slice(Zero);
-			result.push(currentResult);
+
+			if(!!currentResult)
+			{
+				result.push(currentResult);
+			}
 
 			return result;
 		}
 
 		function callMethod(context, method, args)
 		{
-			var result = {};
+			var result = { callStatus: CallStatus.NotStarted };
 
 			try
 			{
 				result.callResult = method.apply(context, args);
+				result.callStatus = CallStatus.Success;
 			}
 			catch(error)
 			{
 				result.error = error;
+				result.callStatus = CallStatus.Error;
 			}
 
 			return result;
@@ -337,7 +362,7 @@
 		// The method that process operation call result.
 		function handleCallResult(wrappedCallResult)
 		{
-			if(!wrappedCallResult.error)
+			if(wrappedCallResult.callStatus === CallStatus.Error)
 			{
 				handleSimpleErrorCallResult(wrappedCallResult.error);
 			}
@@ -353,14 +378,14 @@
 
 		function handleSimpleErrorCallResult(error)
 		{
-			methodCalled();
+			_callParameters.callStatus = CallStatus.Error;
 			_callParameters.error = error;
 			callDeferredFailed();
 		}
 
 		function handleSimpleSuccessCallResult(callResult)
 		{
-			methodCalled();
+			_callParameters.callStatus = CallStatus.Success;
 			_callParameters.callResult = callResult;
 			callDeferredDone();
 		}
@@ -370,12 +395,6 @@
 			_callParameters.callResultDeferred = callResultDeferred;
 			attachToCallResultDeferredSafe();
 						
-		}
-
-		function methodCalled()
-		{
-			_callParameters.isDone = true;
-			_callParameters.isInProgress = false;
 		}
 
 		function isDeferred(callResult)
@@ -393,15 +412,17 @@
 				(_deferred.done instanceof Function))
 			{
 				callSafe(this, _deferred.done, [_callParameters.callResult]);
+				_isChainProcessed = true;
 			}
 		}
 
 		function callDeferredFailed()
 		{
-			if(deferred !== null
+			if(_deferred !== null
 				&& (_deferred.failed instanceof Function))
 			{
 				callSafe(this, _deferred.failed, [_callParameters.error]);
+				_isChainProcessed = true;
 			}
 		}
 
@@ -434,16 +455,16 @@
 		// Called when operation is async and returns deffered and it successfully done.
 		function callResultDeferredSuccess(callResult)
 		{
+			_callParameters.callStatus = CallStatus.Success;
 			_callParameters.callResult = callResult;
-			methodCalled();
 			callDeferredDone();
 		}
 
 		// Called when operation is async and returns deferred and it done with an error.
 		function callResultDeferredError(error)
 		{
+			_callParameters.callStatus = CallStatus.Error;
 			_callParameters.error = error;
-			methodCalled();
 			callDeferredFailed();
 		}
 
@@ -464,24 +485,66 @@
 		this.onSuccess = function(callback)
 		{
 			_success = callback;
+			reSuccess();
+			return _this;
+		}
+
+		// The method that should be called when operation already done and engine need to notify new on success handler.
+		function reSuccess()
+		{
+			if(_this.getIsDone() && _callParameters.callStatus === CallStatus.Success)
+			{
+				callSuccess(_this.getCallResult());
+			}
 		}
 
 		// The method that specifies a callback method that will be called synchronously when a current task completed.
 		this.onError = function(callback)
 		{
 			_error = callback;
+			reError();
+			return _this;
+		}
+
+		// The method that should be called when oprtaion already 
+		function reError()
+		{
+			if(_this.getIsDone() && _callParameters.callStatus === CallStatus.Error)
+			{
+				callError(_this.getError());
+			}
 		}
 
 		// The method that specifies common sync success handler.
 		this.onSuccessCommon = function(callback)
 		{
 			_successCommon = callback;
+			reSuccessCommon();
+			return _this;
+		}
+
+		function reSuccessCommon()
+		{
+			if(_this.getIsDone() && _callParameters.callStatus === CallStatus.Success)
+			{
+				_this.successCommon(_this.getCallResult());
+			}
 		}
 
 		// The method that specifies common sync error handler.
 		this.onErrorCommon = function(callback)
 		{
 			_errorCommon = callback;
+			reErrorCommon();
+			return _this;
+		}
+
+		function reErrorCommon()
+		{
+			if(_this.getIsDone() && !_callParameters.callStatus === CallStatus.Error)
+			{
+				_this.errorCommon(_this.getError());
+			}
 		}
 
 		// Private
@@ -490,9 +553,10 @@
 		{
 			_callParameters =
 				{
-					context = argsCollection[Zero];
-					method = argsCollection[One];
-					argsColection = slice(argsCollection, Two);
+					context: argsCollection[Zero],
+					method: argsCollection[One],
+					argsCollection: slice(argsCollection, Two),
+					callStatus: CallStatus.NotStarted
 				};
 
 		}
@@ -532,8 +596,7 @@
 	constructor.single = function(context, func)
 	{
 		var deferred = new constructor(),
-			result = deferred.single(context || this, func, slice(arguments, Two));
-
+			result = deferred.init(context || this, func, slice(arguments, Two));
 		deferred.done();
 
 		return result;
@@ -637,6 +700,8 @@
 	//return constructor;
 	if(typeof mountPoint !== TypesNames.Undefined)
 	{
+		// Exports
+		mountPoint.CallStatus = CallStatus;
 		mountPoint.Deferred = constructor;
 	}
-})();
+})(ns('SRD.Multitasking'));

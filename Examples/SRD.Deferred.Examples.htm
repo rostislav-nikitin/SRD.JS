@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<title>SRD.Deferred :: Examples</title>
+		<style type='text/css'>
+			#console {color: Green; font-size: 150%;}
+		</style>
+		<script type='text/javascript' src='console.js'></script>
+		<script type='text/javascript' src='../Js/SRD.Namespace.js'></script>
+		<script type='text/javascript' src='../Js/SRD.Deferred.js'></script>
+
+		<script type='text/javascript'>
+			window.addEventListener('load', function()
+				{
+					ns('SRD.Multitasking');
+					// Simple create deferred
+					var deferred = new SRD.Multitasking.Deferred();
+					writeLine('Deferred created. deferred instanceof SRD.Deferred ===' + (deferred instanceof SRD.Multitasking.Deferred));
+
+					// Call SRD.Deferred.single
+					SRD.Multitasking.Deferred.single(this, 
+						function(parameter)
+						{
+							writeLine('Sync func #1 call with \'' + parameter + '\' parameter.');
+							return 'The string result.';
+						}, 'The func string parameter')
+						.onSuccess(function(callResult)
+							{
+								writeLine('func #1 on success handler called. Result is: \'' + callResult + '\'');
+							})
+						.single(this, writeLine, 'Sync func #2 also called...')
+						.onSuccess(function(callResult)
+						{
+							writeLine('And func #2 on success handled too !');
+						})
+						.single(this, function()
+						{
+							// Now we will make a mistake !
+							var notExists = someObjects.notExistingProperty;
+						})
+						.onSuccess(function(callResult)
+						{
+							// This will never called !
+							writeLine('This shouldn\'t be written !!!');
+						})
+						.onError(function(error)
+						{
+							//Error handler have to be executed !
+							writeLine('Error happens: ' + error.message);
+						});
+
+				}, false);
+
+		</script>
+	</head>
+	<body>
+		<ul id='console' />
+	</body>
+</html>
