@@ -47,23 +47,21 @@
 			
 		// The mehtod that executes a single func with a specified funcArgs
 		// Returns a Deffered object
-		/*this.init = function(context, method, args)
+		this.init = function(context, method)
 		{
-			//enqueue(context, method, args);
-
+			enqueue(context, method, arguments);
+                        complete();
 			//return _deferred;
 			return _this;
-		}*/
+		}
 
 		this.single = function(context, method)
 		{
-			enqueue(context, method, arguments);
+			var result = getDeferred().init.apply(this, Array.prototype.slice.call(arguments, Zero));
 
-			createDeferred();
+                        complete();
 
-			complete();
-
-        		return _deferred;
+			return result;
 		}
 
 		// Get the flag that indicates is operation already done.
@@ -94,9 +92,14 @@
 		// Should be executed before wait for done or error. May be done or fail was called before.
 		function complete()
 		{
+			_isChainProcessed = false;
 			while(_completed.length !== Zero)
 			{
 				completeOne(_completed[Zero]);
+				if(!_isChainProcessed)
+				{
+					break;
+				}
 				completedDequeue();
 			}
 		}
@@ -105,9 +108,9 @@
 		var completeProcessors = 
 		{
 			// CompleteTypes.Failed: 
-			0: function(completeParameters) { errorInternal(completeParamters.error); },
+			0: function(completeParameters) { callDeferredFailed(completeParamters.error); },
 			// CompleteTypes.Done: 
-			1: function(completeParameters) { doneInternal(completeParameters.callResult); }
+			1: function(completeParameters) { callDeferredDone(completeParameters.callResult); }
 		};
 
 		function completeOne(completeParameters)
@@ -118,98 +121,111 @@
 		// Should be caller when parent operation is done.
 		this.done = function(callResult)
 		{
+			beginCompleteDone(callResult);
+
 			if(isProcess())
 			{
-				done(callResult);
-				//result = _deferred || _this;
+				doneInternal(callResult);
 			}
 
-			//return result;
+			rollbackComplete();
 		}
 
-		function isProcess()
-		{
-			var result = !_callParameters || (_callParameters.callStatus === CallStatus.NotStarted || _callParameters.callStatus === CallStatus.NotInitialized);
-			return result;
-		}
 
-		function done(callResult)
+		function beginCompleteDone(callResult)
 		{
-			addCompleteDone(callResult);
-
 			_isChainProcessed = false;
+			_completed.push({ completeType: CompleteTypes.Done, callResult: callResult });
+		}
 
-			doneInternal(callResult);
-
+		function rollbackComplete()
+		{
 			if(_isChainProcessed)
 			{
 				completedDequeue();
 			}
 		}
 
-		function addCompleteDone(callResult)
+		function isProcess()
 		{
-			if(_completed.length === Zero)
-			{
-				_completed.push({ completeType: CompleteTypes.Done, callResult: callResult });
-			}
+			var result = !_callParameters || (_callParameters.callStatus !== CallStatus.IsProgress);
+
+			return result;
+		}
+
+		function done(callResult)
+		{
+
+			beginCompleteDone(callResult);
+			
+			doneInternal(callResult);
+
+			rollbackComplete();
 		}
 
 		function doneInternal(callResult)
 		{
 			// If any returns false - stop chain execution otherwise continue.
-			var callSuccessFlag = (callSuccess(callResult) === false),
-				callSuccessCommonFlag = (_this.successCommon(callResult).callResult),
-				isStop = callSuccessFlag || callSuccessCommonFlag;
-			
-			if(!isStop)
+			if(!success(callResult))
 			{
 				continueExecution(callResult);
 			}
 		}
 
+		function success(callResult)
+		{
+			var callSuccessFlag = (callSuccess(callResult) === false),
+				callSuccessCommonFlag = (_this.successCommon(callResult).callResult),
+				isStop = callSuccessFlag || callSuccessCommonFlag;
+
+			return isStop;
+
+		}
+
 		// Should be called when the parent operation is failed.
 		this.failed = function(error)
 		{
+			beginCompleteFailed(error);
+
 			if(isProcess())
 			{
-				failed(error);
+				failedInternal(error);
 			}
+
+			rollbackComplete();
 		}
 
 		function failed(error)
 		{
-			addCompleteFailed(error);
-
-			_isChainProcessed = false;
+			beginCompleteFailed(error);
 
 			failedInternal(error);
 
-			if(_isChainProcessed)
-			{
-				processedDequeue();
-			}
+			rollbackComplete();
 		}
 
-		function addCompleteFailed(error)
+		function beginCompleteFailed(error)
 		{
-			if(_completed.length === Zero)
-			{
-				_completed.push({ completeType: CompleteTypes.Failed, error: error });
-			}
+			_isChainProcessed = false;
+			_completed.push({ completeType: CompleteTypes.Failed, error: error });
 		}
 
 		function failedInternal(error)
 		{
 			// If at least one is true and no one is false - continue execution.
+			if(errorFn(error))
+			{
+				continueExecution(error);
+			}
+		}
+
+		function errorFn(error)
+		{
 			var errorFlag = callError(error),
 				errorComonFlag = _this.errorCommon(error),
 				isContinue = (errorFlag === true || errorComonFlag.callResult);
 
-			if(isContinue)
-			{
-				continueExecution(error);
-			}
+			return isContinue;
 		}
 
 		// The method that should be called to execute sync success callback.
@@ -217,7 +233,7 @@
 		{
 			if(_success instanceof Function)
 			{
-				_isChainProcessed = true;
+				//_isChainProcessed = true;
 				return callSafe(this, _success, [callResult]);
 			}
 		}
@@ -236,7 +252,7 @@
 
 			if(result.isCalled)
 			{
-				_isChainProcessed = true;
+				//_isChainProcessed = true;
 			}
 
 			return result;
@@ -277,7 +293,7 @@
 			if(_error instanceof Function)
 			{
 				result = callSafe(this, _error, [error]);
-				_isChainProcessed = true;
+				//_isChainProcessed = true;
 			}
 
 			return result;
@@ -298,7 +314,7 @@
 
 			if(result.isCalled)
 			{
-				_isChainProcessed = true;
+				//_isChainProcessed = true;
 			}
 
 			return result;
@@ -320,7 +336,7 @@
 
 		function callDeferredErrorCommon(error)
 		{
-			var result = { isCalled: flase, callResult: null };
+			var result = { isCalled: false, callResult: null };
 
 			if(_deferred !== null
 				&& (_deferred.errorCommon instanceof Function))
@@ -335,7 +351,7 @@
 		// This need to continue execution of a current deffered task(s).
 		function continueExecution(currentResult)
 		{
-			if(_callParameters !== null && _callParameters.callStatus === CallStatus.NotStarted)
+			if(_callParameters !== null)
 			{
 				callNext(currentResult);
 			}
@@ -344,7 +360,8 @@
 		// The method that calls operation and process result.
 		function callNext(currentResult)
 		{
-			if(_callParameters.callStatus === CallStatus.NotStarted)
+			if(_callParameters.callStatus !== CallStatus.InProgress
+				&& _callParameters.callStatus !== CallStatus.NotInitialized)
 			{
 				_callParameters.callStatus = CallStatus.InProgress;
 				var     callArgs = createCallArgs(_callParameters.argsCollection, currentResult),
@@ -404,6 +421,7 @@
 		{
 			_callParameters.callStatus = CallStatus.Error;
 			_callParameters.error = error;
+			errorFn(error);
 			callDeferredFailed();
 		}
 
@@ -411,6 +429,7 @@
 		{
 			_callParameters.callStatus = CallStatus.Success;
 			_callParameters.callResult = callResult;
+			success(callResult);
 			callDeferredDone();
 		}
 
@@ -470,7 +489,7 @@
 
 		function attachToCallResultDeferredSafe()
 		{
-			prepareDeferred();
+			//prepareDeferred();
 			attachToCallResultDeferredOnSuccess();
 			attachToCallResultDeferredOnError();
 		}
@@ -500,7 +519,8 @@
 		{
 			_callParameters.callStatus = CallStatus.Success;
 			_callParameters.callResult = callResult;
-			callDeferredDone();
+			//callDeferredDone();
+			success(callResult);
 		}
 
 		// Called when operation is async and returns deferred and it done with an error.
@@ -508,7 +528,8 @@
 		{
 			_callParameters.callStatus = CallStatus.Error;
 			_callParameters.error = error;
-			callDeferredFailed();
+			//callDeferredFailed();
+			errorFn(error);
 		}
 
 		function callSafe(context, method, argsCollection)
@@ -638,9 +659,10 @@
 
 	constructor.single = function(context, func)
 	{
-		var deferred = new constructor(),
-			result = deferred.single.apply(this, ([context || this, func]).concat(slice(arguments, Two)) );
+		var deferred = new constructor();
+		result = deferred.init.apply(this, ([context || this, func]).concat(slice(arguments, Two)) );
 
+		//deferred.done();
 		deferred.done();
 
 		return result;

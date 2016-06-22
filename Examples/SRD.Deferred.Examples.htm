@@ -15,6 +15,7 @@
 				{
 					// Using multitasking. Can work with or without SRD.Namespace
 					var multitasking = typeof ns !== 'undefined' ? ns('SRD.Multitasking') : this;
+
 					// Simple create deferred
 					var deferred = new multitasking.Deferred();
 					writeLine('Deferred created. deferred instanceof SRD.Deferred ===' + (deferred instanceof multitasking.Deferred));
@@ -52,26 +53,33 @@
 						});
 
 					// Async example
-					var Ten = 10;
+					var     Nine = 9,
+						Ten = 10,
+						Eleven = 11;
 
 					var sharedContext = { globalContext: window, setTimeout: window.setTimeout, count: 0 };
 
 					function execWorker(context)
 					{
-						var Timeout = 1000,
+						var Timeout = 200,
 							deferred = new multitasking.Deferred();
 
 						function worker()
 						{
 							writeLine('Worker executing... Count:' + (++context.count));
 			
-							if(context.count < Ten)
+							if(context.count < Eleven)
 							{
 								context.globalContext.setTimeout(worker, Timeout);
 							}
-							else
+
+							if(context.count === Eleven)
 							{
 								deferred.done(context);
+							}
+							else if(context.count === Ten)
+							{
+								deferred.failed(new Error('Fail simulation.'));
 							}
 	        				}
 
@@ -83,7 +91,8 @@
 
 					multitasking.Deferred
 						.single(this, execWorker, sharedContext)
-						.onSuccess(function(){ writeLine('Worker successfully executed.');});
+						.onSuccess(function(){ writeLine('Worker successfully executed.');})
+						.onError(function(error) { writeLine('Error: ' + error.message);});
         			}, false);
 
 		</script>
