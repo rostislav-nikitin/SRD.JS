@@ -15,22 +15,24 @@
 		
 			window.addEventListener('load', function()
 			{
-				writeLine('typeOf() ===' + typeOf());
-				writeLine('typeOf(true) ===' + typeOf(true));
-				writeLine('typeOf(1) ===' + typeOf(1));
-				writeLine('typeOf("This is a string.") ===' + typeOf('This is a string.'));
-				writeLine('typeOf(new String("This is a string.")) ===' + typeOf(new String('This is a string.')));
-				writeLine('typeOf(function(){return true;}) ===' + typeOf(function(){return true}));
-				writeLine('typeOf([]) ===' + typeOf([]));
-				writeLine('typeOf({}) ===' + typeOf({}));
-				writeLine('typeOf(window) ===' + typeOf(window));
-				writeLine('typeOf(window.document) ===' + typeOf(window.document));
-				writeLine('typeOf(window.document.body) ===' + typeOf(window.document.body));
-				writeLine('typeOf(Math) ===' + typeOf(Math));
-				writeLine('typeOf(NaN) ===' + typeOf(NaN));
-				writeLine('typeOf(("Test").substr) ===' + typeOf(("Test").substr));
-				writeLine('typeOf(("Test").substr) ===' + typeOf(("Test").substr));
-				writeLine('typeOf(window.document.getElementById("console")) ===' + typeOf(window.document.getElementById("console")));
+				writeLine('typeOf() === \'' + typeOf() + '\'');
+				writeLine('typeOf(true) === \'' + typeOf(true) + '\'');
+				writeLine('typeOf(1) === \'' + typeOf(1) + '\'');
+				writeLine('typeOf("This is a string.") === \'' + typeOf('This is a string.') + '\'');
+				writeLine('typeOf(new String("This is a string.")) === \'' + typeOf(new String('This is a string.')) + '\'');
+				writeLine('typeOf(function(){return true;}) === \'' + typeOf(function(){return true}) + '\'');
+				writeLine('typeOf([]) === \'' + typeOf([]) + '\'');
+				writeLine('typeOf({}) === \'' + typeOf({}) + '\'');
+				writeLine('typeOf(/\s+/) === \'' + typeOf(/\s+/) + '\'');
+				writeLine('typeOf(new RegExp(\'\w+\')) === \'' + typeOf(new RegExp('\w+')) + '\'');
+				writeLine('typeOf(window) === \'' + typeOf(window) + '\'');
+				writeLine('typeOf(window.document) === \'' + typeOf(window.document) + '\'');
+				writeLine('typeOf(window.document.body) === \'' + typeOf(window.document.body) + '\'');
+				writeLine('typeOf(Math) === \'' + typeOf(Math) + '\'');
+				writeLine('typeOf(NaN) === \'' + typeOf(NaN) + '\'');
+				writeLine('typeOf(("Test").substr) === \'' + typeOf(("Test").substr) + '\'');
+				writeLine('typeOf((new String ("Test")).substr) === \'' + typeOf((new String("Test")).substr) + '\'');
+				writeLine('typeOf(window.document.getElementById("console")) === \'' + typeOf(window.document.getElementById("console")) + '\'');
 			}, false);
 		</script>
 	<head>
