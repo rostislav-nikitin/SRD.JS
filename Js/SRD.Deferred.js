@@ -57,16 +57,13 @@
 
 		this.single = function(context, method)
 		{
-			debugger;
 			enqueue(context, method, arguments);
 
 			createDeferred();
 
-			//_deferred.init(context, method, args);
 			complete();
 
-
-			return _deferred;
+        		return _deferred;
 		}
 
 		// Get the flag that indicates is operation already done.
@@ -138,7 +135,7 @@
 
 		function done(callResult)
 		{
-			_completed.push({ completeType: CompleteTypes.Done, callResult: callResult });
+			addCompleteDone(callResult);
 
 			_isChainProcessed = false;
 
@@ -150,11 +147,20 @@
 			}
 		}
 
+		function addCompleteDone(callResult)
+		{
+			if(_completed.length === Zero)
+			{
+				_completed.push({ completeType: CompleteTypes.Done, callResult: callResult });
+			}
+		}
+
 		function doneInternal(callResult)
 		{
 			// If any returns false - stop chain execution otherwise continue.
-			var isStop = (callSuccess(callResult) === false);
-			isStop = ( _this.successCommon(callResult) === false) || isStop;
+			var callSuccessFlag = (callSuccess(callResult) === false),
+				callSuccessCommonFlag = (_this.successCommon(callResult).callResult),
+				isStop = callSuccessFlag || callSuccessCommonFlag;
 			
 			if(!isStop)
 			{
@@ -165,20 +171,15 @@
 		// Should be called when the parent operation is failed.
 		this.failed = function(error)
 		{
-			var result = _this;
-
 			if(isProcess())
 			{
 				failed(error);
-				result = _deferred || _this;
 			}
-
-			return result;
 		}
 
 		function failed(error)
 		{
-			_completed.push({ completeType: CompleteTypes.Failed, error: error });
+			addCompleteFailed(error);
 
 			_isChainProcessed = false;
 
@@ -190,21 +191,24 @@
 			}
 		}
 
+		function addCompleteFailed(error)
+		{
+			if(_completed.length === Zero)
+			{
+				_completed.push({ completeType: CompleteTypes.Failed, error: error });
+			}
+		}
+
 		function failedInternal(error)
 		{
 			// If at least one is true and no one is false - continue execution.
 			var errorFlag = callError(error),
 				errorComonFlag = _this.errorCommon(error),
-				isContinue = (errorFlag === true || errorComonFlag === true) 
-					&& (errorFlat !== false && errorCommonFlag !== false);
+				isContinue = (errorFlag === true || errorComonFlag.callResult);
 
 			if(isContinue)
 			{
 				continueExecution(error);
-			}
-			else
-			{
-				_isChainProcessed = true;
 			}
 		}
 
@@ -226,9 +230,9 @@
 				result = { isCalled: successCommonResult.isCalled 
 						|| deferredSuccessCommonResult.isCalled, 
 					callResult: (successCommonResult.isCalled 
-							&& typeof (successCommonResult.callResult) === TypesNames.Boolean && successCommonResult.callResult)
+							&& successCommonResult.callResult === false)
 						|| (deferredSuccessCommonResult.isCalled 
-							&& typeof (deferredSuccessCommonResult.callResult) === TypesNames.Boolean && deferredSuccessCommonResult.callResult) };
+							&& deferredSuccessCommonResult.callResult === false) };
 
 			if(result.isCalled)
 			{
@@ -273,6 +277,7 @@
 			if(_error instanceof Function)
 			{
 				result = callSafe(this, _error, [error]);
+				_isChainProcessed = true;
 			}
 
 			return result;
@@ -285,7 +290,16 @@
 			// And then we can & second to determine does was called some common handler or not.
 			var errorCommonResult = callErrorCommon(error),
 				deferredErrorComonResult = callDeferredErrorCommon(error),
-				result = errorCommonResult === true || deferredErrorCommonResult;
+				result = { 
+						isCalled:  errorCommonResult.isCalled || deferredErrorComonResult.isCalled,
+						callResult: (errorCommonResult.isCalled && errorCommonResult.callResult === true)
+								|| (deferredErrorComonResult.isCalled && deferredErrorComonResult.callResult === true) 
+					};
+
+			if(result.isCalled)
+			{
+				_isChainProcessed = true;
+			}
 
 			return result;
 		}
@@ -293,11 +307,12 @@
 		// The method that should be called to execute sync error common callback.
 		function callErrorCommon(error)
 		{
-			var result;
+			var result = { isCalled: false, callResult: null };
 
 			if(_errorCommon instanceof Function)
 			{
-				result = callSafe(this, _errorCommon, [error]);
+				result.isCalled = true;
+				result.callResult = callSafe(this, _errorCommon, [error]);
 			}
 
 			return result;
@@ -305,7 +320,7 @@
 
 		function callDeferredErrorCommon(error)
 		{
-			var result;
+			var result = { isCalled: flase, callResult: null };
 
 			if(_deferred !== null
 				&& (_deferred.errorCommon instanceof Function))
@@ -340,7 +355,6 @@
 
 		function createCallArgs(argsCollection, currentResult)
 		{
-			debugger;
 			var result = (argsCollection || []).slice(Zero);
 
 			if(!!currentResult)
@@ -627,7 +641,6 @@
 		var deferred = new constructor(),
 			result = deferred.single.apply(this, ([context || this, func]).concat(slice(arguments, Two)) );
 
-		//debugger;
 		deferred.done();
 
 		return result;
