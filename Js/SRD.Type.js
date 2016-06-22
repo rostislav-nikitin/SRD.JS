@@ -14,7 +14,7 @@
 +======================================================================================================================+
 */
 
-(function(context, isExportToContext)
+(function(mountPoint, context)
 {
 	var 	TypesNames = 
 		{
@@ -27,32 +27,58 @@
 			Array: "array",
 			Object: "object",
 		},
+		Zero = 0,
 		One = 1,
-		DefaultIsExportToContext = true,
-		_context = context || this,
-		_isExportToContext = isExportToContext || DefaultIsExportToContext;
+		CharacterSpace = ' ',
+		AnonymousFunctionName = 'anonymous',
+		DefaultEvaluatorPredicateValue = true,
+		_mountPoint = mountPoint;
 
+	var evaluators = 
+	[
+		{ predicate: function(obj) { return obj instanceof String; }, evaluate: function (obj) { return TypesNames.StringObject; } },
+		{ predicate: function(obj) { return obj instanceof Function; }, evaluate: function(obj)
+			{
+				var result = CharacterSpace + AnonymousFunctionName, 
+					matches = Function.prototype.toString.call(obj).match(/function\s+([^\s\{\(]+)/);
+
+				if(!!matches && matches.length > Zero)
+				{
+					result = CharacterSpace + matches[One];
+				}
+
+				result = TypesNames.Function + result;
+
+				return result;
+			} },
+		{ predicate: function(obj) { return typeof obj !== TypesNames.Undefined }, evaluate: function(obj) 
+			{
+				var result = Object.prototype.toString.call(obj).match(/\s([^\]]*)/)[1].toLowerCase(); 
+				return result;
+			} },
+		{ predicate: function(obj) { return DefaultEvaluatorPredicateValue; }, evaluate: function(obj) { return typeof(obj); } }
+	]
 
 	function typeOf(obj)
 	{
-		var result = typeof(obj);
+		var result;
 
-                if(obj instanceof String)
-                {
-                      result = TypesNames.StringObject;
-                }
-		else if(result !== TypesNames.Undefined)
+		for(var index = Zero; index < evaluators.length; index++)
 		{
-			result = Object.prototype.toString.call(obj).match(/\s([^\]]*)/)[1].toLowerCase();
+			if(evaluators[index].predicate(obj))
+			{
+				result = evaluators[index].evaluate(obj);
+				break;
+			}
 		}
 
 		return result;
 	}
 
-	if(_isExportToContext)
+	if(!!_mountPoint)
 	{
-		_context.TypesNames = TypesNames;
-		_context.typeOf = typeOf;
+		_mountPoint.TypesNames = TypesNames;
+		_mountPoint.typeOf = typeOf;
 	}
 
-})();                        
+})(this);                        
