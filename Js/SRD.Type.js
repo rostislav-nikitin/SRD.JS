@@ -14,7 +14,7 @@
 +======================================================================================================================+
 */
 
-(function(context, isExportToContext)
+(function(mountPoint, context)
 {
 	var 	TypesNames = 
 		{
@@ -28,10 +28,7 @@
 			Object: "object",
 		},
 		One = 1,
-		DefaultIsExportToContext = true,
-		_context = context || this,
-		_isExportToContext = isExportToContext || DefaultIsExportToContext;
-
+		_mountPoint = mountPoint;
 
 	function typeOf(obj)
 	{
@@ -49,10 +46,10 @@
 		return result;
 	}
 
-	if(_isExportToContext)
+	if(!!_mountPoint)
 	{
-		_context.TypesNames = TypesNames;
-		_context.typeOf = typeOf;
+		_mountPoint.TypesNames = TypesNames;
+		_mountPoint.typeOf = typeOf;
 	}
 
-})();                        
+})(this);                        

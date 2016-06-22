@@ -16,8 +16,8 @@
 
 			require
 				.useConfig({isSplitName: true, basePath: 'SRD.Require.Examples'})
-					.require('SRD.Namespace', null, {isSplitName: false, basePath: '../Js'})
-					.require('SRD.Type', null, {isSplitName: false, basePath: '../Js'})
+					.require('SRD.Namespace', null, { isSplitName: false, basePath: '../Js' })
+					.require('SRD.Type', null, { isSplitName: false, basePath: '../Js' })
 					.require('TestNamespace.InnerTestNamespace.ClassOne')
 					.require('MissingLibrary')
 					.onError(function (error)

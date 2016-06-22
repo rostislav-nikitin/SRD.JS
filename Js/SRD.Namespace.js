@@ -39,7 +39,7 @@
 */
 
 // Public Namespace class
-(function(globalContext, rootNsFullName, isExportToGlobalContext)
+(function(mountPoint, globalContext, rootNsFullName)
 {
 	// Private static members
 	// Constants
@@ -59,15 +59,12 @@
 
 
 	// Defaults (constants)
-	var DefaultIsExportToGlobalContext = true, DefaultRootNsFullName = "SRD";
+	var DefaultRootNsFullName = "SRD";
 
 	// Fields
-	var _globalContext = globalContext || this, 
-		_rootNsFullName = rootNsFullName || DefaultRootNsFullName,
-		_isExportToGlobalContext = 
-			(typeof(isExportToGlobalContext) !== TypesNames.Undefined &&  isExportToGlobalContext === true) 
-			|| DefaultIsExportToGlobalContext;
-
+	var     _mountPoint = mountPoint,
+		_globalContext = globalContext || this, 
+		_rootNsFullName = rootNsFullName || DefaultRootNsFullName;
 
 	// Constructor
 	function constructor (parentNamespace)
@@ -242,15 +239,15 @@
 	}
 
 	// Create Global alias for the Namespace.ns public static member;
-	if(_isExportToGlobalContext)
+	if(!!_mountPoint)
 	{
-		_globalContext.ns = constructor.ns;	
-		_globalContext.isNs = constructor.isNs;
-		_globalContext.isNsExists = constructor.isNsExists;
+		_mountPoint.ns = constructor.ns;	
+		_mountPoint.isNs = constructor.isNs;
+		_mountPoint.isNsExists = constructor.isNsExists;
 	}
 
 	var rootNs = constructor.ns.apply(_globalContext, [_rootNsFullName]);
 	rootNs.Namespace = constructor;
 
 	return constructor;
-})();
+})(this, this);

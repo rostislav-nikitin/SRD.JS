@@ -29,8 +29,10 @@
 
 			window.addEventListener('load', function()
 				{
+					// using linq = SRD.LINQ
+					var linq = SRD.LINQ;
 					var array = [1, 2, 3];
-					var copiedArray = linq(array).copy();
+					var copiedArray = linq.Extensions.extend(array).copy();
 					writeLine('copied array instanceof Array =' + (copiedArray instanceof Array));
 					writeLine('Copied array type is:' + typeOf(copiedArray));
 					writeLine('Copied array length is: ' + copiedArray.length);

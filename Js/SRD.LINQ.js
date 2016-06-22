@@ -1,17 +1,18 @@
 // Array.Helpers
 require('SRD.Namespace', null, { basePath: '../Js', isSplitName: false })
 	.require('SRD.Type', null, { basePath: '../Js', isSplitName: false });
-	
-ns("SRD.LINQ").Extensions = (function(context, isExportToContext)
+
+// Static class. Internall impletented as a singletone.	
+(function(mountPoint, isExtendArray)
 	{
 		// Private static constants
 		var 	Zero = 0,
 			One = 1,
 			DefaultIsInArray = false,
-			DefaultIsExportToContext = true,
+			DefaultIsExtendArray = true,
 		// Private static variables
-			_isExportToContext = isExportToContext || DefaultIsExportToContext,
-			_context = context || this,
+			_mountPoint = mountPoint,
+			_isExtendArray = isExtendArray || DefaultIsExtendArray,
 			_instance;
 
 		// Private static helper methods
@@ -149,10 +150,14 @@ ns("SRD.LINQ").Extensions = (function(context, isExportToContext)
 			return _instance;
 		}
 
-		if(_isExportToContext)
+		if(!!_mountPoint)
+		{
+			_mountPoint.Extensions = getInstance();
+		}
+
+		if(_isExtendArray)
 		{
 			getInstance().extend(Array.prototype);
-			_context.linq = getInstance().extend;
 		}
 
 		
@@ -1211,4 +1216,4 @@ ns("SRD.LINQ").Extensions = (function(context, isExportToContext)
 			return result;
 		}
 */
-	})();
+})(typeof ns !== 'undefined' ? ns('SRD.LINQ') : this);

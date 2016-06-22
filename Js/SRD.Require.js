@@ -14,7 +14,8 @@
 #                                                                                                                      #
 +======================================================================================================================+
 */
-(function(context, isExportToContext)
+// Static type. Singletone pattern was used to avoid multiple instances will be created.
+(function(mountPoint, context)
 {
 	// Private static constants
 	var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean', String: 'string', Function: 'function', Object: 'object' },
@@ -24,13 +25,12 @@
 		PointCharacter = '.', 
 		SlashCharacter = '/',
 		DefaultIsSplitName = false,
-		DefaultIsExportToContext = true,
 		DefaultIsAddJsExtension = true,
 		DefaultJsExtension = 'js',
 		DefaultConfig = { isSplitName: DefaultIsSplitName, basePath: '.', isAddJsExtension:  true, jsExtension: 'js' },
 	// Private static variables
+		_mountPoint = mountPoint,
 		_context = context || this,
-		_isExportToContext = isExportToContext || DefaultIsExportToContext,
 		_instance;
 	// Private static methods
 	function trim(str)
@@ -635,15 +635,13 @@
 		getInstance: getInstance
 	};
 
-	if(_isExportToContext)
+	if(!!_mountPoint)
 	{
-
-		// Export a reference to the only one require method inside a context.
-		_context.require = result.getInstance().require;
+		// Export a reference to the only one require method inside a mount point.
+		_mountPoint.require = result.getInstance().require;
 		// Add to the require method a 'config' member. It is a refrence to the extensions singleton setConfig method.
-		_context.require.useConfig = result.getInstance().useConfig;
+		_mountPoint.require.useConfig = result.getInstance().useConfig;
 	}
 
 	return result;
-})();
-
+})(this, window);
