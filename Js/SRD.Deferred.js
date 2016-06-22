@@ -2,7 +2,7 @@
 {
 	var 	TypesNames = { Undefined: 'undefined', Boolean: 'boolean' },
 		CompleteTypes = { Failed: 0, Done: 1 },
-		CallStatus = { NonInitialized: -1, NotStarted: 0, InProgress: 1, Error: 2, Success: 4 },
+		CallStatus = { NotInitialized: -1, NotStarted: 0, InProgress: 1, Error: 2, Success: 4 },
 		Zero = 0,
 		One = 1,
 		Two = 2;
@@ -30,7 +30,7 @@
 	function constructor(context, method)
 	{
 		var 	_this = this,
-			_callParameters = { callStatus: CallStatus.NonInitialized },
+			_callParameters = { callStatus: CallStatus.NotInitialized },
 			// Completed queues. When no success, error handlers attached it collect done, error calls to don't forget them.
 			_completed = [],
 			// The flag that indicates that done or faile was processed (calles succes or error handled)
@@ -47,21 +47,24 @@
 			
 		// The mehtod that executes a single func with a specified funcArgs
 		// Returns a Deffered object
-		this.init = function(context, method)
+		/*this.init = function(context, method, args)
 		{
-			enqueue(arguments);
+			//enqueue(context, method, args);
 
 			//return _deferred;
 			return _this;
-		}
+		}*/
 
 		this.single = function(context, method)
 		{
+			debugger;
+			enqueue(context, method, arguments);
+
 			createDeferred();
 
-			_deferred.init(context, method, slice(arguments, Two));
-
+			//_deferred.init(context, method, args);
 			complete();
+
 
 			return _deferred;
 		}
@@ -105,9 +108,9 @@
 		var completeProcessors = 
 		{
 			// CompleteTypes.Failed: 
-			0: function(completeParameters) { _deferred.error(completeParamters.error); },
+			0: function(completeParameters) { errorInternal(completeParamters.error); },
 			// CompleteTypes.Done: 
-			1: function(completeParameters) { _deferred.done(completeParameters.callResult); }
+			1: function(completeParameters) { doneInternal(completeParameters.callResult); }
 		};
 
 		function completeOne(completeParameters)
@@ -121,12 +124,15 @@
 			if(isProcess())
 			{
 				done(callResult);
+				//result = _deferred || _this;
 			}
+
+			//return result;
 		}
 
 		function isProcess()
 		{
-			var result = !_callParameters || (_callParameters.callStatus === CallStatus.NotStarted);
+			var result = !_callParameters || (_callParameters.callStatus === CallStatus.NotStarted || _callParameters.callStatus === CallStatus.NotInitialized);
 			return result;
 		}
 
@@ -154,19 +160,20 @@
 			{
 				continueExecution(callResult);
 			}
-			else
-			{
-				_isChainProcessed = true;
-			}
 		}
 
 		// Should be called when the parent operation is failed.
 		this.failed = function(error)
 		{
+			var result = _this;
+
 			if(isProcess())
 			{
 				failed(error);
+				result = _deferred || _this;
 			}
+
+			return result;
 		}
 
 		function failed(error)
@@ -206,6 +213,7 @@
 		{
 			if(_success instanceof Function)
 			{
+				_isChainProcessed = true;
 				return callSafe(this, _success, [callResult]);
 			}
 		}
@@ -215,16 +223,16 @@
 		{
 			var 	successCommonResult = callSuccessCommon(callResult),
 				deferredSuccessCommonResult = callDeferredSuccessCommon(callResult),
-				result;
+				result = { isCalled: successCommonResult.isCalled 
+						|| deferredSuccessCommonResult.isCalled, 
+					callResult: (successCommonResult.isCalled 
+							&& typeof (successCommonResult.callResult) === TypesNames.Boolean && successCommonResult.callResult)
+						|| (deferredSuccessCommonResult.isCalled 
+							&& typeof (deferredSuccessCommonResult.callResult) === TypesNames.Boolean && deferredSuccessCommonResult.callResult) };
 
-			if(typeof(successCommonResult) === TypesNames.Boolean)
+			if(result.isCalled)
 			{
-				result = successCommonResult;
-			}
-
-			if(typeof(deferredSuccessCommonResult) === TypesNames.Boolean)
-			{
-				result = result & deferredSuccessCommonResult;
+				_isChainProcessed = true;
 			}
 
 			return result;
@@ -233,11 +241,12 @@
 		// The method that should be called to execute current sync success common callback.
 		function callSuccessCommon(callResult)
 		{
-			var result;
+			var result = { isCalled: false, callResult: null };
 
 			if(_successCommon instanceof Function)
 			{
-				result = callSafe(this, _successCommon, [callResult]);
+				result.isCalled = true;
+				result.callResult = callSafe(this, _successCommon, [callResult]);
 			}
 
 			return result;
@@ -246,7 +255,7 @@
 		// The method that should be called to execute next deffered in chain sync successs common callback wrapper.
 		function callDeferredSuccessCommon(callResult)
 		{
-			var result;
+			var result = { isCalled: false, callResult: null };
 
 			if(_deferred !== null)
 			{
@@ -331,6 +340,7 @@
 
 		function createCallArgs(argsCollection, currentResult)
 		{
+			debugger;
 			var result = (argsCollection || []).slice(Zero);
 
 			if(!!currentResult)
@@ -416,6 +426,16 @@
 			}
 		}
 
+		function getDeferred()
+		{
+			if(_deferred === null)
+			{
+				createDeferred();
+			}
+
+			return _deferred;
+		}
+
 		function callDeferredFailed()
 		{
 			if(_deferred !== null
@@ -426,13 +446,22 @@
 			}
 		}
 
+		function prepareDeferred()
+		{
+			if(_deferred === null)
+			{
+				createDeferred();
+			}
+		}
+
 		function attachToCallResultDeferredSafe()
 		{
-			attachToCallResultDeferredOnSucces();
+			prepareDeferred();
+			attachToCallResultDeferredOnSuccess();
 			attachToCallResultDeferredOnError();
 		}
 
-		function attachCallResultDeferredOnSuccess()
+		function attachToCallResultDeferredOnSuccess()
 		{
 			var callResultDeferred = _callParameters.callResultDeferred;
 
@@ -442,7 +471,7 @@
 			}
 		}
 
-		function attachCallResultDeferredOnError()
+		function attachToCallResultDeferredOnError()
 		{
 			var callResultDeferred = _callParameters.callResultDeferred;
 
@@ -549,13 +578,13 @@
 
 		// Private
 		// Queue
-		function enqueue(argsCollection)
+		function enqueue(context, method, args)
 		{
 			_callParameters =
 				{
-					context: argsCollection[Zero],
-					method: argsCollection[One],
-					argsCollection: slice(argsCollection, Two),
+					context: context,
+					method: method,
+					argsCollection: slice(args, Two),
 					callStatus: CallStatus.NotStarted
 				};
 
@@ -596,7 +625,9 @@
 	constructor.single = function(context, func)
 	{
 		var deferred = new constructor(),
-			result = deferred.init(context || this, func, slice(arguments, Two));
+			result = deferred.single.apply(this, ([context || this, func]).concat(slice(arguments, Two)) );
+
+		//debugger;
 		deferred.done();
 
 		return result;

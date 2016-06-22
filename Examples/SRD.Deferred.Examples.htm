@@ -6,9 +6,11 @@
 		</style>
 		<script type='text/javascript' src='console.js'></script>
 		<script type='text/javascript' src='../Js/SRD.Namespace.js'></script>
+		<script type='text/javascript' src='../Js/SRD.Type.js'></script>
 		<script type='text/javascript' src='../Js/SRD.Deferred.js'></script>
 
 		<script type='text/javascript'>
+			"use strict";
 			window.addEventListener('load', function()
 				{
 					// Using multitasking. Can work with or without SRD.Namespace
@@ -49,7 +51,40 @@
 							writeLine('Error happens: ' + error.message);
 						});
 
-				}, false);
+					// Async example
+					var Ten = 10;
+
+					var sharedContext = { globalContext: window, setTimeout: window.setTimeout, count: 0 };
+
+					function execWorker(context)
+					{
+						var Timeout = 1000,
+							deferred = new multitasking.Deferred();
+
+						function worker()
+						{
+							writeLine('Worker executing... Count:' + (++context.count));
+			
+							if(context.count < Ten)
+							{
+								context.globalContext.setTimeout(worker, Timeout);
+							}
+							else
+							{
+								deferred.done(context);
+							}
+	        				}
+
+						context.globalContext.setTimeout(worker, Timeout);
+
+						return deferred;
+					}
+
+
+					multitasking.Deferred
+						.single(this, execWorker, sharedContext)
+						.onSuccess(function(){ writeLine('Worker successfully executed.');});
+        			}, false);
 
 		</script>
 	</head>
