@@ -68,7 +68,7 @@
 			_className = className,
 			_isAnonymous = null;
 
-		this.isClass = function(className)
+		this.is = function(className)
 		{
 			return _className === className;
 		}
@@ -85,15 +85,18 @@
 
 		this.className = function()
 		{
-			if(_this.isAnonymous())
+			var result;
+
+			if(_className === AnonymousFunctionName)
 			{
-				var ErrorMessage = 'Can not call getClassName() method for anonymous functions. Check with isAnonymous() before.'
-				throw new Error(ErrorMessage);
+				result = null;
 			}
 			else
 			{
-				return _className
-			};
+				result = _className;
+			}
+
+			return result;
 		}
 	}
 
@@ -111,7 +114,7 @@
 
 		this.classType = function()
 		{
-			if(_value === true && _classType === null)
+			if(_classType === null)
 			{
 				_classType = new ClassType(_classTypeName);
 			}
@@ -133,12 +136,14 @@
 
 		this.isNative = function()
 		{
-			return _stringTypeName === StringEmpty;
+			return _value === true &&
+				_stringTypeName === StringEmpty;
 		}
 
 		this.isBoxed = function()
 		{
-			return _stringTypeName === TypesNames.Object;
+			return _value === true &&
+				_stringTypeName === TypesNames.Object;
 		}
 	}
 
@@ -213,7 +218,7 @@
 			}
 			else
 			{
-				result = new IsTypeResult(false);
+				result = new IsTypeResult(false, null);
 			}
 
 			return result;

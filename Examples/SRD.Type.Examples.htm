@@ -104,21 +104,13 @@
 
 				addSubSection('Classes')
 				writeLine('typeOf(MyClass).isType() == ' + typeOf(MyClass).isType());
-				writeLine('typeOf(MyClass).isType().isAnonymous() == ' + typeOf(MyClass).isType().classType().isAnonymous());
-				writeLine('typeOf(MyClass).isType().className() == \'' + typeOf(MyClass).isType().classType().className() + '\'');
+				writeLine('typeOf(MyClass).isType().classType().isAnonymous() == ' + typeOf(MyClass).isType().classType().isAnonymous());
+				writeLine('typeOf(MyClass).isType().classType().className() == \'' + typeOf(MyClass).isType().classType().className() + '\'');
 
 
 				writeLine('typeOf(AnonymousClass).isType() == ' + typeOf(AnonymousClass).isType());
-				writeLine('typeOf(AnonymousClass).isType().isAnonymous() == ' + typeOf(AnonymousClass).isType().classType().isAnonymous());
-				try
-				{
-					typeOf(AnonymousClass).isType().classType().className();
-				}
-				catch(error)
-				{
-					writeLine('typeOf(AnonymousClass).isType().className() throw a new Error: ' + error);
-				}
-
+				writeLine('typeOf(AnonymousClass).isType().classType().isAnonymous() == ' + typeOf(AnonymousClass).isType().classType().isAnonymous());
+				writeLine('typeOf(AnonymousClass).isType().classType().className() == ' + typeOf(AnonymousClass).isType().classType().className());
 
 
 
