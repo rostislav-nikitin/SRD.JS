@@ -7,7 +7,7 @@
 			h2 { font-family: Tahoma; background-color: purple; color: white; padding-top: 4px; padding-bottom: 4px; padding-right: 32px; padding-left: 8px; }
 			h3 { font-family: Tahoma; color: fray; }
 			ul { list-style-type: square; }
-			li { font-family: 'Courier New'; font-size: 100%; }
+			li { font-family: 'Courier New'; }
 		</style>
 		<script type='text/javascript' src='../Js/SRD.Type.js'></script>
 		<script type='text/javascript'>
@@ -61,11 +61,13 @@
 
 				writeLine('typeOf(true) == \'' + typeOf(true) + '\'');
 				writeLine('typeOf(1) == \'' + typeOf(1) + '\'');
+				writeLine('typeOf(1.0) == \'' + typeOf(1.0) + '\'');
 				writeLine('typeOf(NaN) == \'' + typeOf(NaN) + '\'');
 				writeLine('typeOf(\'This is a native string.\') == \'' + typeOf('This is a native string.') + '\'');
 				addSubSection('Reference types');
-				writeLine('typeOf(new String(\'This is a boxed string.\')) == \'' + typeOf(new String('This is a boxed string.')) + '\'');
 				writeLine('typeOf() == \'' + typeOf() + '\'');
+				writeLine('typeOf(null) == \'' + typeOf(null) + '\'');
+				writeLine('typeOf(new String(\'This is a boxed string.\')) == \'' + typeOf(new String('This is a boxed string.')) + '\'');
 				writeLine('typeOf([]) == \'' + typeOf([]) + '\'');
 				writeLine('typeOf({}) == \'' + typeOf({}) + '\'');
 				writeLine('typeOf(MyClass) == \'' + typeOf(MyClass) + '\'');
@@ -80,18 +82,19 @@
 				writeLine('typeOf((new String (\'Test\')).substr) == \'' + typeOf((new String('Test')).substr) + '\'');
 				writeLine('typeOf(window.document.getElementById(\'console\')) == \'' + typeOf(window.document.getElementsByTagName(TagUl)) + '\'');
 
-				addSection('typeOf returns a Type instance. This is a type members usage.');
+				addSection('typeOf returns a Type instance. This is a Type instance members usage.');
 				addSubSection('Value types');
 				writeLine('typeOf(false).isBoolean() == ' + typeOf(false).isBoolean());
-        			writeLine('typeOf(123).isNumber() == ' + typeOf(123).isNumber());
+        			writeLine('typeOf(1).isNumber() == ' + typeOf(1).isNumber());
+        			writeLine('typeOf(1.0).isNumber() == ' + typeOf(1.0).isNumber());
         			writeLine('typeOf(NaN).isNumber() == ' + typeOf(NaN).isNumber());
 				writeLine('typeOf(\'This is a native string.\').isString() == ' + typeOf('This is a string.').isString());
 				writeLine('typeOf(\'This is a native string.\').isString().isNative() == ' + typeOf('This is a native string.').isString().isNative());
 				writeLine('typeOf(\'This is a native string.\').isString().isBoxed() == ' + typeOf('This is a native string.').isString().isBoxed());
 
 				addSubSection('Reference types');
-				writeLine('typeOf(null).isNull() == ' + typeOf(null).isNull());
 				writeLine('typeOf(undefined).isUndefined() == ' + typeOf(undefined).isUndefined());
+				writeLine('typeOf(null).isNull() == ' + typeOf(null).isNull());
 
 				writeLine('typeOf(new String(\'This is a boxed string.\')).isString() == ' + typeOf(new String('This is a boxed string.')).isString());
 				writeLine('typeOf(new String(\'This is a boxed string.\')).isString().isBoxed() == ' + typeOf(new String('This is a boxed string.')).isString().isBoxed());
