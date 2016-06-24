@@ -18,17 +18,20 @@
 {
 	var 	TypesNames = 
 		{
-			Undefined: "undefined",
-			Boolean: "boolean",
-			Number: "number",
-			String: "string",
+			Undefined: 'undefined',
+			Boolean: 'boolean',
+			Number: 'number',
+			String: 'string',
 			StringObject: 'string object',
-			Function: "function",
-			Array: "array",
-			Object: "object",
+			Function: 'function',
+			Array: 'array',
+			Object: 'object',
+			Null: 'null'
 		},
+		MinusOne = -1,
 		Zero = 0,
 		One = 1,
+		StringEmpty = '',
 		CharacterSpace = ' ',
 		AnonymousFunctionName = 'anonymous',
 		DefaultEvaluatorPredicateValue = true,
@@ -57,7 +60,170 @@
 				return result;
 			} },
 		{ predicate: function(obj) { return DefaultEvaluatorPredicateValue; }, evaluate: function(obj) { return typeof(obj); } }
-	]
+	];
+
+	function ClassType(className)
+	{
+		var _this = this,
+			_className = className,
+			_isAnonymous = null;
+
+		this.isClass = function(className)
+		{
+			return _className === className;
+		}
+
+		this.isAnonymous = function()
+		{
+			if(_isAnonymous === null)
+			{
+				_isAnonymous = _className === AnonymousFunctionName;
+			}
+
+			return _isAnonymous;
+		}
+
+		this.className = function()
+		{
+			if(_this.isAnonymous())
+			{
+				var ErrorMessage = 'Can not call getClassName() method for anonymous functions. Check with isAnonymous() before.'
+				throw new Error(ErrorMessage);
+			}
+			else
+			{
+				return _className
+			};
+		}
+	}
+
+	function IsTypeResult(value, classTypeName)
+	{
+		var _this = this,
+			_value = value,
+			_classTypeName = classTypeName,
+			_classType = null;
+
+		this.valueOf = function()
+		{
+			return _value;
+		}
+
+		this.classType = function()
+		{
+			if(_value === true && _classType === null)
+			{
+				_classType = new ClassType(_classTypeName);
+			}
+
+			return _classType;
+		}
+	}
+
+	function IsStringResult(value, stringTypeName)
+	{
+		var _this = this,
+			_value = value,
+			_stringTypeName = stringTypeName;
+
+		this.valueOf = function()
+		{
+			return _value;
+		}
+
+		this.isNative = function()
+		{
+			return _stringTypeName === StringEmpty;
+		}
+
+		this.isBoxed = function()
+		{
+			return _stringTypeName === TypesNames.Object;
+		}
+	}
+
+	function Type(name)
+	{
+		var 	_this = this,
+			_name = name;
+
+		this.toString = function()
+		{
+			return _name;
+		}
+
+		this.isBoolean = function()
+		{
+			return _name.startsWith(TypesNames.Boolean);
+		}
+
+		this.isNumber = function()
+		{
+			return _name.startsWith(TypesNames.Number);
+		}
+
+		this.isString = function()
+		{
+			var result;
+
+			if(_name.startsWith(TypesNames.String))
+			{
+				result = new IsStringResult(true, _name.split(CharacterSpace).slice(One).join());
+			}
+			else
+			{
+				result = new IsStringResult(false);
+			}
+
+			return result;
+        	}
+
+		this.isArray = function()
+		{
+			return _name === TypesNames.Array;
+		}
+
+		this.isObject = function()
+		{
+			return _name.startsWith(TypesNames.Object);
+		}
+
+		this.isNull = function()
+		{
+			return _name === TypesNames.Null;
+		}
+
+		this.isUndefined = function()
+		{
+			return _name === TypesNames.Undefined;
+		}
+
+		this.isNaN = function()
+		{
+			
+		}
+
+		this.isType = function()
+		{
+			var result;
+
+			if(_name.startsWith(TypesNames.Function))
+			{
+				result = new IsTypeResult(true, _name.split(CharacterSpace).slice(One).join());
+			}
+			else
+			{
+				result = new IsTypeResult(false);
+			}
+
+			return result;
+		}
+
+		this.name = function()
+		{
+			return _name;
+		}
+	}
 
 	function typeOf(obj)
 	{
@@ -67,7 +233,7 @@
 		{
 			if(evaluators[index].predicate(obj))
 			{
-				result = evaluators[index].evaluate(obj);
+				result = new Type(evaluators[index].evaluate(obj));
 				break;
 			}
 		}

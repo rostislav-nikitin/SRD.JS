@@ -2,6 +2,9 @@ SET basePath=../Js/
 java -jar ..\node_modules\closure-library\compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js "%basePath%SRD.Namespace.js" "%basePath%SRD.Type.js" "%basePath%SRD.Deferred.js" "%basePath%SRD.Require.js" --js_output_file srd.core.min.adv.js
 java -jar ..\node_modules\closure-library\compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js "%basePath%SRD.LINQ.js" --js_output_file srd.linq.min.adv.js
 
+java -jar ..\node_modules\closure-library\compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js "%basePath%SRD.Namespace.js" "%basePath%SRD.Type.js" "%basePath%SRD.Deferred.js" "%basePath%SRD.Require.js" --js_output_file srd.core.min.smp.js
+java -jar ..\node_modules\closure-library\compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js "%basePath%SRD.LINQ.js" --js_output_file srd.linq.min.smp.js
+
 REM java -jar ..\node_modules\closure-library\compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js "SRD.Namespace.js" "SRD.Type.js" "SRD.Deferred.js" "SRD.Require.js" --js_output_file srd.core.min.smp.js
 
 REM java -jar ..\node_modules\closure-library\compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js "SRD.Namespace.js" --js_output_file srd.namespace.min.adv.js
