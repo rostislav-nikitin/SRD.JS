@@ -105,7 +105,7 @@
 				addSubSection('Classes')
 				writeLine('typeOf(MyClass).isType() == ' + typeOf(MyClass).isType());
 				writeLine('typeOf(MyClass).isType().isAnonymous() == ' + typeOf(MyClass).isType().classType().isAnonymous());
-				writeLine('typeOf(MyClass).isType().className() == ' + typeOf(MyClass).isType().classType().className());
+				writeLine('typeOf(MyClass).isType().className() == \'' + typeOf(MyClass).isType().classType().className() + '\'');
 
 
 				writeLine('typeOf(AnonymousClass).isType() == ' + typeOf(AnonymousClass).isType());
